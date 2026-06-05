@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800" font-family="system-ui, -apple-system, Segoe UI, Roboto, sans-serif">
+  <rect width="1280" height="800" fill="#0f1419"/>
+  <rect width="240" height="800" fill="#161b22"/>
+  <rect x="18" y="22" width="30" height="30" rx="9" fill="#4f9cf933"/>
+  <path d="M33 30 l-7 3 v5 c0 4 3 6 7 8 4-2 7-4 7-8 v-5 z" fill="none" stroke="#4f9cf9" stroke-width="2"/>
+  <text x="58" y="36" fill="#e6edf3" font-size="16" font-weight="700">Capybara_AI</text>
+  <text x="58" y="50" fill="#6b7785" font-size="10">Admin-Konsole</text>
+  <text x="44" y="102" fill="#9aa7b4" font-size="14">Dashboard</text>
+  <rect x="8" y="118" width="224" height="38" rx="8" fill="#4f9cf922"/>
+  <text x="44" y="142" fill="#4f9cf9" font-size="14" font-weight="600">Benutzer</text>
+  <text x="44" y="186" fill="#9aa7b4" font-size="14">Dokumente</text>
+  <text x="44" y="226" fill="#9aa7b4" font-size="14">Compliance</text>
+  <line x1="240" y1="64" x2="1280" y2="64" stroke="#2a3441"/>
+  <text x="272" y="40" fill="#e6edf3" font-size="19" font-weight="650">Benutzer</text>
+
+  <!-- invite + roles -->
+  <rect x="272" y="92" width="476" height="220" rx="12" fill="#1a212b" stroke="#2a3441"/>
+  <text x="292" y="124" fill="#9aa7b4" font-size="12" font-weight="600">BENUTZER EINLADEN</text>
+  <text x="292" y="156" fill="#9aa7b4" font-size="12">E-Mail</text>
+  <rect x="292" y="166" width="436" height="40" rx="8" fill="#11161d" stroke="#2a3441"/>
+  <text x="306" y="191" fill="#6b7785" font-size="13">person@firma.de</text>
+  <text x="292" y="232" fill="#9aa7b4" font-size="12">Rolle</text>
+  <rect x="292" y="242" width="436" height="40" rx="8" fill="#11161d" stroke="#2a3441"/>
+  <text x="306" y="267" fill="#e6edf3" font-size="13">member</text>
+  <rect x="640" y="242" width="88" height="40" rx="8" fill="#2f7de0"/>
+  <text x="684" y="267" text-anchor="middle" fill="#fff" font-size="13" font-weight="600">Einladen</text>
+
+  <rect x="764" y="92" width="484" height="220" rx="12" fill="#1a212b" stroke="#2a3441"/>
+  <text x="784" y="124" fill="#9aa7b4" font-size="12" font-weight="600">ROLLEN &amp; RECHTE</text>
+  <text x="784" y="158" fill="#e6edf3" font-size="13" font-weight="700">owner</text><text x="980" y="158" fill="#6b7785" font-size="12">Voller Zugriff, Schlüsselrotation</text>
+  <text x="784" y="196" fill="#e6edf3" font-size="13" font-weight="700">admin</text><text x="980" y="196" fill="#6b7785" font-size="12">Benutzer, SSO, Webhooks</text>
+  <text x="784" y="234" fill="#e6edf3" font-size="13" font-weight="700">member</text><text x="980" y="234" fill="#6b7785" font-size="12">Chat, RAG, Upload</text>
+  <text x="784" y="272" fill="#e6edf3" font-size="13" font-weight="700">viewer</text><text x="980" y="272" fill="#6b7785" font-size="12">Nur Lesezugriff</text>
+
+  <!-- members table -->
+  <rect x="272" y="328" width="976" height="356" rx="12" fill="#1a212b" stroke="#2a3441"/>
+  <text x="292" y="360" fill="#9aa7b4" font-size="12" font-weight="600">MITGLIEDER (5)</text>
+  <line x1="292" y1="378" x2="1228" y2="378" stroke="#2a3441"/>
+  <text x="300" y="400" fill="#6b7785" font-size="11">E-MAIL</text><text x="700" y="400" fill="#6b7785" font-size="11">ROLLE</text><text x="900" y="400" fill="#6b7785" font-size="11">MFA</text><text x="1060" y="400" fill="#6b7785" font-size="11">STATUS</text>
+  <g font-size="14">
+    <text x="300" y="442" fill="#4f9cf9">anna.weber@firma.de</text><rect x="700" y="428" width="60" height="22" rx="11" fill="#161b22" stroke="#2a3441"/><text x="712" y="443" fill="#9aa7b4" font-size="11">owner</text><circle cx="906" cy="437" r="4" fill="#3fb950"/><text x="918" y="442" fill="#9aa7b4">aktiv</text><rect x="1060" y="428" width="56" height="22" rx="11" fill="#3fb95022"/><text x="1072" y="443" fill="#3fb950" font-size="11">aktiv</text>
+    <line x1="292" y1="466" x2="1228" y2="466" stroke="#222b36"/>
+    <text x="300" y="500" fill="#4f9cf9">jonas.klein@firma.de</text><rect x="700" y="486" width="60" height="22" rx="11" fill="#161b22" stroke="#2a3441"/><text x="712" y="501" fill="#9aa7b4" font-size="11">admin</text><circle cx="906" cy="495" r="4" fill="#3fb950"/><text x="918" y="500" fill="#9aa7b4">aktiv</text><rect x="1060" y="486" width="56" height="22" rx="11" fill="#3fb95022"/><text x="1072" y="501" fill="#3fb950" font-size="11">aktiv</text>
+    <line x1="292" y1="524" x2="1228" y2="524" stroke="#222b36"/>
+    <text x="300" y="558" fill="#4f9cf9">lea.fischer@firma.de</text><rect x="700" y="544" width="70" height="22" rx="11" fill="#161b22" stroke="#2a3441"/><text x="712" y="559" fill="#9aa7b4" font-size="11">member</text><circle cx="906" cy="553" r="4" fill="#d29922"/><text x="918" y="558" fill="#9aa7b4">aus</text><rect x="1060" y="544" width="88" height="22" rx="11" fill="#d2992222"/><text x="1072" y="559" fill="#d29922" font-size="11">eingeladen</text>
+    <line x1="292" y1="582" x2="1228" y2="582" stroke="#222b36"/>
+    <text x="300" y="616" fill="#4f9cf9">tim.braun@firma.de</text><rect x="700" y="602" width="60" height="22" rx="11" fill="#161b22" stroke="#2a3441"/><text x="712" y="617" fill="#9aa7b4" font-size="11">viewer</text><circle cx="906" cy="611" r="4" fill="#3fb950"/><text x="918" y="616" fill="#9aa7b4">aktiv</text><rect x="1060" y="602" width="84" height="22" rx="11" fill="#f8514922"/><text x="1072" y="617" fill="#f85149" font-size="11">deaktiviert</text>
+  </g>
+  <text x="640" y="762" text-anchor="middle" fill="#3a4450" font-size="12">Vorschau-Platzhalter · Benutzerverwaltung · 1280×800</text>
+</svg>

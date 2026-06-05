@@ -1,22 +1,67 @@
-<%~ include("_head", { title: "Benutzer" }) %>
-<h1>Benutzer</h1>
-<div class="card">
-<h3>Benutzer einladen</h3>
-<form hx-post="/admin/users/invite" hx-swap="none">
-<input type="hidden" name="_csrf" value="<%= it.csrf %>">
-<label>E-Mail</label><input name="email" type="email" placeholder="person@firma.de" required>
-<label>Rolle</label><select name="role"><option value="member">member</option><option value="admin">admin</option><option value="viewer">viewer</option></select>
-<p><button type="submit">Einladen</button></p>
-</form>
+<%~ include("_head", { title: "Benutzer", active: "users" }) %>
+<%
+  var statusPill = function (s) {
+    if (s === 'active') return '<span class="pill ok">aktiv</span>';
+    if (s === 'invited') return '<span class="pill warn">eingeladen</span>';
+    if (s === 'inactive') return '<span class="pill err">deaktiviert</span>';
+    return '<span class="pill">' + s + '</span>';
+  };
+%>
+<div class="grid cols-2">
+  <div class="card">
+    <div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg> Benutzer einladen</div>
+    <form hx-post="/admin/users/invite" hx-swap="none" data-toast-success="Einladung gesendet." data-toast-error="Einladung fehlgeschlagen.">
+      <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+      <label>E-Mail</label>
+      <input name="email" type="email" placeholder="person@firma.de" required>
+      <label>Rolle</label>
+      <select name="role">
+        <option value="member">member</option>
+        <option value="admin">admin</option>
+        <option value="viewer">viewer</option>
+      </select>
+      <p class="mt-14">
+        <button type="submit">
+          <span class="htmx-indicator spinner"></span>
+          Einladen
+        </button>
+      </p>
+    </form>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg> Rollen &amp; Rechte</div>
+    <div class="status-row"><span class="label"><strong>owner</strong></span><span class="meta">Voller Zugriff, Schlüsselrotation, Export</span></div>
+    <div class="status-row"><span class="label"><strong>admin</strong></span><span class="meta">Benutzer, SSO, Webhooks, Compliance</span></div>
+    <div class="status-row"><span class="label"><strong>member</strong></span><span class="meta">Chat, RAG, Dokumente hochladen</span></div>
+    <div class="status-row"><span class="label"><strong>viewer</strong></span><span class="meta">Nur Lesezugriff</span></div>
+  </div>
 </div>
-<div class="card">
-<table>
-<thead><tr><th>E-Mail</th><th>Rolle</th><th>MFA</th><th>Status</th></tr></thead>
-<tbody>
-<% it.users.forEach(function(u){ %>
-<tr><td><a href="/admin/users/<%= u.id %>"><%= u.email %></a></td><td><%= u.role %></td><td><%= u.mfaEnrolled ? "✓" : "—" %></td><td><%= u.status %></td></tr>
-<% }) %>
-</tbody>
-</table>
+
+<div class="card mt-16">
+  <div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg> Mitglieder (<%= it.users.length %>)</div>
+  <% if (it.users.length) { %>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>E-Mail</th><th>Rolle</th><th>MFA</th><th>Status</th></tr></thead>
+        <tbody>
+        <% it.users.forEach(function (u) { %>
+          <tr>
+            <td><a href="/admin/users/<%= u.id %>"><%= u.email %></a></td>
+            <td><span class="pill"><%= u.role %></span></td>
+            <td><% if (u.mfaEnrolled) { %><span class="dot ok"></span> aktiv<% } else { %><span class="dot warn"></span> aus<% } %></td>
+            <td><%~ statusPill(u.status) %></td>
+          </tr>
+        <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } else { %>
+    <div class="empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
+      <h3>Noch keine Mitglieder</h3>
+      <p>Laden Sie Ihr Team über das Formular oben ein — die Einladung wird per Token verschickt.</p>
+    </div>
+  <% } %>
 </div>
 <%~ include("_foot") %>

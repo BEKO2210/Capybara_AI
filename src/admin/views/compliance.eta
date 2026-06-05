@@ -1,15 +1,46 @@
-<%~ include("_head", { title: "Compliance" }) %>
-<h1>Compliance <span class="badge ki">KI-generierter Inhalt</span></h1>
+<%~ include("_head", { title: "Compliance", active: "compliance" }) %>
+<%
+  var riskPill = function (r) {
+    var v = String(r || '').toLowerCase();
+    var cls = 'ok';
+    if (v.indexOf('unaccept') >= 0 || v.indexOf('high') >= 0 || v.indexOf('hoch') >= 0) cls = 'err';
+    else if (v.indexOf('limit') >= 0 || v.indexOf('begrenz') >= 0) cls = 'warn';
+    return '<span class="pill ' + cls + '">' + r + '</span>';
+  };
+%>
 <div class="card">
-<h3>KI-Inventar (Art. 4 EU AI Act)</h3>
-<table>
-<thead><tr><th>Modell</th><th>Anbieter</th><th>Risikoklasse</th><th>Aufsicht</th></tr></thead>
-<tbody>
-<% it.inventory.forEach(function(e){ %>
-<tr><td><%= e.modelName %></td><td><%= e.provider %></td><td><%= e.riskClass %></td><td><%= e.humanOversightRequired ? "erforderlich" : "—" %></td></tr>
-<% }) %>
-</tbody>
-</table>
-<p><a href="/api/compliance/report.pdf"><button>Compliance-Bericht (PDF)</button></a></p>
+  <div class="card-title row-between">
+    <span class="inline-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg> KI-Inventar — Art. 4 EU AI Act</span>
+    <span class="pill ki">KI-generierter Inhalt</span>
+  </div>
+  <% if (it.inventory.length) { %>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Modell</th><th>Anbieter</th><th>Risikoklasse</th><th>Menschliche Aufsicht</th></tr></thead>
+        <tbody>
+        <% it.inventory.forEach(function (e) { %>
+          <tr>
+            <td><strong><%= e.modelName %></strong></td>
+            <td><%= e.provider %></td>
+            <td><%~ riskPill(e.riskClass) %></td>
+            <td><% if (e.humanOversightRequired) { %><span class="dot warn"></span> erforderlich<% } else { %><span class="dot ok"></span> nicht erforderlich<% } %></td>
+          </tr>
+        <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } else { %>
+    <div class="empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>
+      <h3>KI-Inventar noch leer</h3>
+      <p>Das Inventar füllt sich automatisch, sobald KI-Modelle für Abfragen genutzt werden (Art. 4 EU AI Act).</p>
+    </div>
+  <% } %>
+  <p class="mt-16">
+    <a class="btn" href="/api/compliance/report.pdf">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>
+      Compliance-Bericht (PDF)
+    </a>
+  </p>
 </div>
 <%~ include("_foot") %>

@@ -51,52 +51,71 @@ export async function registerAdminUi(app: FastifyInstance, deps: AdminUiDeps): 
   });
 
   app.get<{ Params: { id: string } }>('/admin/users/:id', adminOnly, async (req, reply) => {
-    const activity = await userActivity(deps.db, ctxOf(req), req.params.id);
-    const body = `<p>Aktivität (30 Tage):</p><ul>
-      <li>Abfragen: ${activity.queries}</li><li>Uploads: ${activity.uploads}</li>
-      <li>Logins: ${activity.logins}</li><li>Audit-Ereignisse: ${activity.auditEvents}</li></ul>`;
-    return html(reply, 'page', { title: 'Benutzerdetails', body });
+    const a = await userActivity(deps.db, ctxOf(req), req.params.id);
+    const metric = (label: string, value: number) =>
+      `<div class="card stat"><div class="card-title">${label}</div><div class="value">${value}</div></div>`;
+    const body = `<div class="card-title">Aktivität (letzte 30 Tage)</div>
+      <div class="grid stats">
+        ${metric('Abfragen', a.queries)}${metric('Uploads', a.uploads)}
+        ${metric('Logins', a.logins)}${metric('Audit-Ereignisse', a.auditEvents)}
+      </div>
+      <p class="mt-16"><a class="btn ghost sm" href="/admin/users">← Zurück zu Benutzern</a></p>`;
+    return html(reply, 'page', { title: 'Benutzerdetails', active: 'users', body });
   });
 
   app.get('/admin/documents', adminOnly, (_req, reply) =>
-    html(reply, 'page', { title: 'Dokumente', body: '<p>Dokumentenverwaltung — siehe <code>/api/documents</code>. Filter nach Klassifizierung über die API.</p>' }),
+    html(reply, 'page', {
+      title: 'Dokumente',
+      active: 'documents',
+      body: `<div class="card-title">Dokumentenverwaltung</div>
+        <p>Verschlüsselte Dokumente werden über die API verwaltet. Upload, Versionierung,
+        Legal Hold und klassifizierungsbasierte Zugriffe laufen über
+        <code>/api/documents</code>.</p>
+        <p class="mt-12"><span class="pill ok">AES-256-GCM</span> <span class="pill">RLS-isoliert</span> <span class="pill">ClamAV optional</span></p>`,
+    }),
   );
 
   app.get('/admin/compliance', adminOnly, async (req, reply) => {
     const inventory = await listInventory(deps.db, ctxOf(req));
-    return html(reply, 'compliance', { title: 'Compliance', inventory });
+    return html(reply, 'compliance', { title: 'Compliance', active: 'compliance', inventory });
   });
 
   app.get('/admin/sso', adminOnly, (_req, reply) => {
     const csrf = reply.generateCsrf();
-    const body = `<form hx-post="/api/admin/sso/config" hx-ext="json-enc">
+    const body = `<div class="card-title">SSO-Konfiguration (OIDC)</div>
+      <form hx-post="/api/admin/sso/config" hx-ext="json-enc" hx-swap="none"
+            data-toast-success="SSO gespeichert." data-toast-error="Speichern fehlgeschlagen.">
       <input type="hidden" name="_csrf" value="${csrf}">
       <label>Issuer</label><input name="issuer" placeholder="https://login.microsoftonline.com/&lt;tenant&gt;/v2.0" required>
       <label>Client ID</label><input name="clientId" required>
       <label>Client Secret</label><input name="clientSecret" type="password" required>
-      <label>Redirect URI</label><input name="redirectUri" required>
-      <p><button type="submit">Speichern</button></p></form>`;
-    return html(reply, 'page', { title: 'SSO-Konfiguration', body });
+      <label>Redirect URI</label><input name="redirectUri" placeholder="https://app.example.com/auth/oidc/callback" required>
+      <p class="mt-14"><button type="submit"><span class="htmx-indicator spinner"></span> Speichern</button></p></form>`;
+    return html(reply, 'page', { title: 'SSO-Konfiguration', active: 'sso', body });
   });
 
   app.get('/admin/api-keys', adminOnly, (_req, reply) => {
     const csrf = reply.generateCsrf();
-    const body = `<form hx-post="/api/admin/api-keys">
+    const body = `<div class="card-title">API-Keys</div>
+      <form hx-post="/api/admin/api-keys" hx-swap="none"
+            data-toast-success="API-Key erstellt — Schlüssel wird einmalig angezeigt." data-toast-error="Erstellen fehlgeschlagen.">
       <input type="hidden" name="_csrf" value="${csrf}">
-      <label>Name</label><input name="name" required>
-      <p><button type="submit">API-Key erstellen</button></p></form>
-      <p><small>Der vollständige Schlüssel wird nur einmal angezeigt.</small></p>`;
-    return html(reply, 'page', { title: 'API-Keys', body });
+      <label>Name</label><input name="name" placeholder="z. B. CI-Pipeline" required>
+      <p class="mt-14"><button type="submit"><span class="htmx-indicator spinner"></span> API-Key erstellen</button></p></form>
+      <p class="muted mt-8">Der vollständige Schlüssel wird aus Sicherheitsgründen nur einmal angezeigt.</p>`;
+    return html(reply, 'page', { title: 'API-Keys', active: 'api-keys', body });
   });
 
   app.get('/admin/webhooks', adminOnly, (_req, reply) => {
     const csrf = reply.generateCsrf();
-    const body = `<form hx-post="/api/admin/webhooks">
+    const body = `<div class="card-title">Webhooks</div>
+      <form hx-post="/api/admin/webhooks" hx-swap="none"
+            data-toast-success="Webhook angelegt." data-toast-error="Anlegen fehlgeschlagen.">
       <input type="hidden" name="_csrf" value="${csrf}">
-      <label>Ziel-URL</label><input name="url" required>
-      <label>Secret (HMAC)</label><input name="secret" type="password" required>
-      <p><button type="submit">Webhook anlegen</button></p></form>`;
-    return html(reply, 'page', { title: 'Webhooks', body });
+      <label>Ziel-URL</label><input name="url" placeholder="https://hooks.example.com/capybara" required>
+      <label>Secret (HMAC-Signierung)</label><input name="secret" type="password" required>
+      <p class="mt-14"><button type="submit"><span class="htmx-indicator spinner"></span> Webhook anlegen</button></p></form>`;
+    return html(reply, 'page', { title: 'Webhooks', active: 'webhooks', body });
   });
 
   // htmx invite (CSRF-protected, returns a small fragment).

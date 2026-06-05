@@ -69,4 +69,30 @@ describe('admin UI', () => {
     expect(res.status).toBe(200);
     expect(res.headers.get('content-type')).toMatch(/javascript/);
   });
+
+  it('serves the local stylesheet and script (no CDN), with theme toggle + toasts', async () => {
+    const css = await fetch(`${url}/admin/static/app.css`, { headers: auth(owner, 'admin') });
+    expect(css.status).toBe(200);
+    expect(css.headers.get('content-type')).toMatch(/css/);
+    const js = await fetch(`${url}/admin/static/app.js`, { headers: auth(owner, 'admin') });
+    expect(js.status).toBe(200);
+    expect(js.headers.get('content-type')).toMatch(/javascript/);
+
+    const body = await (await fetch(`${url}/admin/dashboard`, { headers: auth(owner, 'admin') })).text();
+    expect(body).toContain('/admin/static/app.css');
+    expect(body).toContain('/admin/static/app.js');
+    expect(body).toContain('data-action="theme"'); // dark/light toggle
+    expect(body).toContain('id="toasts"'); // toast container
+    expect(body).toContain('class="sidebar"'); // sidebar nav
+  });
+
+  it('emits NO inline style attributes (keeps the strict CSP intact)', async () => {
+    const pages = ['/admin/dashboard', '/admin/users', '/admin/compliance', '/admin/sso', '/admin/api-keys', '/admin/webhooks', '/admin/documents'];
+    for (const p of pages) {
+      const body = await (await fetch(`${url}${p}`, { headers: auth(owner, 'admin') })).text();
+      expect(body, `${p} has inline style=`).not.toMatch(/\sstyle=/);
+      // No <style> blocks either — all CSS is in the external stylesheet.
+      expect(body, `${p} has <style>`).not.toMatch(/<style/i);
+    }
+  });
 });
