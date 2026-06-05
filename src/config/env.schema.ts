@@ -35,6 +35,17 @@ export const envSchema = z.object({
   LOG_LEVEL: z
     .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace'])
     .default('info'),
+
+  // Global rate-limit defaults (per IP+identity). Stricter limits are applied
+  // per-route (e.g. auth, AI endpoints).
+  RATE_LIMIT_MAX: z.coerce.number().int().positive().default(100),
+  RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60_000),
+
+  // LLM providers as a JSON array of {id,type,baseUrl,model,apiKey?}. Endpoints
+  // are SERVER-ONLY: callers select a provider by id, never by URL.
+  LLM_PROVIDERS: z.string().optional(),
+  LLM_DEFAULT_PROVIDER: z.string().optional(),
+  LLM_REQUEST_TIMEOUT_MS: z.coerce.number().int().positive().default(30_000),
 });
 
 export type RawEnv = z.infer<typeof envSchema>;

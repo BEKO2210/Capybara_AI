@@ -6,3 +6,7 @@ export { memberships, ROLES } from './memberships.js';
 export type { Membership, NewMembership, Role } from './memberships.js';
 export { sessions } from './sessions.js';
 export type { Session, NewSession } from './sessions.js';
+export { auditLog } from './auditLog.js';
+export type { AuditEntry, NewAuditEntry } from './auditLog.js';
+export { securityEvents } from './securityEvents.js';
+export type { SecurityEvent, NewSecurityEvent } from './securityEvents.js';
