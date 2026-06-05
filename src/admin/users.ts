@@ -3,6 +3,7 @@ import { and, eq, desc, sql } from 'drizzle-orm';
 import type { AppDatabase } from '../db/client.js';
 import { users, memberships, sessions, auditLog, type Role } from '../db/schema/index.js';
 import { withTenantContext, type TenantContext } from '../tenancy/scope.js';
+import { clearLockout } from '../auth/abuseGuard.js';
 
 export class AdminError extends Error {
   constructor(message: string, readonly code: 'self_deactivate' | 'owner_demotion' | 'email_exists' | 'not_found') {
@@ -135,6 +136,43 @@ export async function deactivateUser(
       targetId: targetUserId,
     });
   });
+}
+
+/**
+ * Administratively clear a brute-force lockout for a member of the caller's org.
+ * Verifies the target is a member (RLS-scoped) before touching the global
+ * lockout table, then writes a business audit entry. Returns whether a lock was
+ * actually cleared.
+ */
+export async function unlockUser(
+  db: AppDatabase,
+  ctx: TenantContext,
+  targetUserId: string,
+): Promise<{ cleared: boolean; email: string }> {
+  const target = await withTenantContext(db, ctx, async (tx) => {
+    const rows = await tx
+      .select({ email: users.email })
+      .from(memberships)
+      .innerJoin(users, eq(users.id, memberships.userId))
+      .where(eq(memberships.userId, targetUserId))
+      .limit(1);
+    return rows[0];
+  });
+  if (!target) throw new AdminError('membership not found', 'not_found');
+
+  const cleared = await clearLockout(db, target.email);
+
+  await withTenantContext(db, ctx, async (tx) => {
+    await tx.insert(auditLog).values({
+      orgId: ctx.orgId,
+      actorUserId: ctx.userId,
+      action: 'user.unlocked',
+      targetType: 'user',
+      targetId: targetUserId,
+      metadata: { cleared },
+    });
+  });
+  return { cleared, email: target.email };
 }
 
 export interface UserActivity {

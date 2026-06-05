@@ -84,6 +84,25 @@ describe('admin — user management', () => {
     const res = await fetch(`${url}/api/admin/users/${owner.userId}/deactivate`, { method: 'POST', headers: auth(owner) });
     expect(res.status).toBe(400);
   });
+
+  it('unlocks a brute-force-locked member and audits it', async () => {
+    // Lock the admin member by recording failures against their email.
+    const { recordFailure } = await import('../../src/auth/abuseGuard.js');
+    const policy = { maxFailures: 1, windowMs: 60_000, lockBaseMs: 10_000, lockMaxMs: 100_000 };
+    await recordFailure(t.app.db, 'ad-admin@example.com', policy);
+
+    const res = await fetch(`${url}/api/admin/users/${admin2.userId}/unlock`, { method: 'POST', headers: auth(owner) });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { cleared: boolean; email: string };
+    expect(body.cleared).toBe(true);
+    const audit = await t.admin.db.select().from(auditLog).where(and(eq(auditLog.action, 'user.unlocked'), eq(auditLog.targetId, admin2.userId)));
+    expect(audit.length).toBe(1);
+  });
+
+  it('refuses to unlock a non-member (404)', async () => {
+    const res = await fetch(`${url}/api/admin/users/${orgB.userId}/unlock`, { method: 'POST', headers: auth(owner) });
+    expect(res.status).toBe(404);
+  });
 });
 
 describe('admin — stats', () => {

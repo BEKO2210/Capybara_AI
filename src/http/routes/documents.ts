@@ -12,9 +12,12 @@ import {
   setLegalHold,
   LegalHoldError,
 } from '../../documents/lifecycle.js';
+import { enforceStorageQuota, QuotaExceededError } from '../../admin/storageQuota.js';
 
 export interface DocumentRoutesDeps extends IngestDeps {
   maxUploadBytes: number;
+  /** Optional per-org storage quota in bytes; uploads over it are rejected (413). */
+  storageQuotaBytes?: number;
 }
 
 function isClassification(v: unknown): v is Classification {
@@ -36,6 +39,21 @@ export async function registerDocumentRoutes(app: FastifyInstance, deps: Documen
     const buffer = await file.toBuffer();
     if (file.file.truncated || buffer.length > deps.maxUploadBytes) {
       return reply.code(413).send({ error: 'file too large' });
+    }
+    // Enforce the per-organization storage quota before persisting.
+    if (deps.storageQuotaBytes !== undefined) {
+      try {
+        await enforceStorageQuota(deps.db, ctx, buffer.length, deps.storageQuotaBytes);
+      } catch (err) {
+        if (err instanceof QuotaExceededError) {
+          return reply
+            .code(413)
+            .header('x-quota-used', String(err.usedBytes))
+            .header('x-quota-limit', String(err.limitBytes))
+            .send({ error: 'storage_quota_exceeded' });
+        }
+        throw err;
+      }
     }
     const fields = file.fields as Record<string, { value?: string } | undefined>;
     const rawClass = fields['classification']?.value;

@@ -17,7 +17,7 @@ export interface CompletionsDeps {
   db: AppDatabase;
   resolveProvider: (id: string) => LlmProvider;
   providerId: string;
-  rateLimit?: { max: number; timeWindow: number };
+  rateLimit?: { max: number; timeWindow: number; keyGenerator?: (req: import('fastify').FastifyRequest) => string };
 }
 
 /** Cheap heuristic token estimate (≈4 chars/token). */

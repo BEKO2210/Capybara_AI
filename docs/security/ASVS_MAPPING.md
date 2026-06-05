@@ -58,8 +58,29 @@ implementing module and, where applicable, the test.
   `src/auth/mfa.ts`); TOTP secrets encrypted at rest via AES-256-GCM (`src/lib/crypto.ts`).
 - Streaming (SSE) responses and cloud providers (OpenAI-compatible, Anthropic).
 
+## Delivered in Phase D / P2 (production hardening)
+
+- **V2/V4 Account lockout:** brute-force lockout with a sliding failure window
+  and exponential backoff; admin unlock endpoint; events recorded in the
+  tamper-evident log (`src/auth/abuseGuard.ts`, `tests/auth/abuseGuard.test.ts`).
+- **V6 Cryptography at rest:** field-level encryption via envelope scheme — a
+  master KEK wraps per-org DEKs — with **key rotation** that re-encrypts chunk
+  and message ciphertext and retains retired key versions
+  (`src/admin/encryption.ts`, `tests/admin/encryption.test.ts`).
+- **V11 Business-logic / anti-automation:** layered rate limiting per
+  IP/account/LLM/upload, in-process per-org concurrent-stream cap, and per-org
+  storage quota (413 + quota headers) (`src/http/rateLimits.ts`,
+  `src/admin/storageQuota.ts`).
+- **V12 Provisioning:** SCIM 2.0 (RFC 7643/7644) user/group provisioning with
+  org-scoped bearer tokens (`src/integrations/scim.ts`, guides under
+  `docs/guides/SCIM_*.md`).
+- **Operational resilience:** backup/restore scripts, disaster-recovery runbook,
+  and a deep `/healthz` (db/vectorSearch/backup/version → 200/503)
+  (`scripts/`, `docs/DISASTER_RECOVERY.md`, `src/http/health.ts`).
+
 ## Notable not-yet (tracked in ENTERPRISE_READINESS / RISK_REGISTER)
 
-- Full **SAML** (typed stub only) — P2.
-- Broad field-level encryption at rest / KMS — P2 (TOTP secrets already encrypted).
-- Process/microVM isolation for tool execution — P2.
+- Full **SAML** (typed stub only) — P3.
+- KMS-backed master key (KEK is env-supplied today) — P3.
+- Process/microVM isolation for tool execution — P3.
+- Security-event off-box anchoring / log shipping — P3.

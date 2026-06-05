@@ -32,3 +32,5 @@ export type {
   MeteringEvent, ExportJob, OidcConfig, ApiKey, WebhookConfig, WebhookDelivery,
   MeteringEventType, ApiKeyScope,
 } from './enterprise.js';
+export { scimConfigs, encryptionKeyVersions, authLockouts } from './p2.js';
+export type { ScimConfig, EncryptionKeyVersion, AuthLockout } from './p2.js';

@@ -1,101 +1,153 @@
-# Capybara_AI
+<div align="center">
 
-Enterprise, security-first, self-hostable AI system. Built secure-by-default
-from the first commit: multi-tenant, zero-trust, fail-closed.
+# 🐹 Capybara_AI
 
-> **Status: P0 secure foundation (in progress).** The core security pillars are
-> implemented and tested. Packaging (Docker hardening, CI/supply-chain) and the
-> full security-document suite are still pending. See [Scope](#scope) below.
+**Self-hosted, DSGVO-konforme KI-Workspace für den Mittelstand.**
 
-## Scope
+Sicherheit zuerst. Mandantenfähig. Auditierbar. Vom ersten Commit an
+secure-by-default — damit Unternehmen ihre eigene KI betreiben, ohne Daten aus
+der Hand zu geben.
 
-Eight foundation pillars, each with passing integration tests proving they
-**work and fail correctly** (62 tests total):
+[![CI](https://img.shields.io/badge/CI-typecheck%20·%20build%20·%20test-informational)](.github/workflows/ci.yml)
+[![Security](https://img.shields.io/badge/security-audit%20·%20OSV%20·%20gitleaks%20·%20SBOM-blue)](.github/workflows/security.yml)
+[![License](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
+![Made in Germany](https://img.shields.io/badge/Made%20in-Germany%20🇩🇪-black)
 
-1. **Fail-closed configuration** (`src/config/`) — production refuses to start
-   when required secrets are missing, weak, placeholder, or when CORS is
-   wildcarded / cookies are insecure / the DB URL lacks TLS. Dev uses
-   clearly-ephemeral generated secrets — no insecure defaults.
-2. **Database + PostgreSQL Row-Level Security** (`src/db/`, `src/tenancy/`) —
-   tenant isolation at the **database** layer. The app connects as a restricted
-   `capybara_app` role (non-superuser, **NOBYPASSRLS**); RLS keys off a
-   per-transaction `app.current_org` GUC set via `withTenant()`. Deny-by-default
-   when no tenant context is set.
-3. **Auth abstraction** (`src/auth/`) — Argon2id hashing, an OIDC/SAML-ready
-   `AuthProvider` interface, a local dev provider, and opaque server-side
-   sessions storing **only the SHA-256 hash** of the token.
-4. **RBAC** (`src/rbac/`) — least-privilege `owner/admin/member/viewer`
-   capability matrix; fail-closed Fastify guards (401/403).
-5. **HTTP security middleware** (`src/http/`, `src/server.ts`) — helmet CSP,
-   strict CORS (no wildcard), CSRF on state-changing routes, rate limiting,
-   fail-closed error handler that never leaks internals.
-6. **Audit + tamper-evident security log** (`src/audit/`) — queryable audit
-   trail plus a hash-chained, append-only security-event log (UPDATE/DELETE
-   revoked from the app role) with an offline chain verifier.
-7. **LLM provider abstraction** (`src/ai/providers/`) — server-only endpoints;
-   callers select a provider by id and **cannot** supply a base URL (closes the
-   SSRF-via-base_url gap). OpenAI-compatible adapter (Ollama/vLLM).
-8. **AI tool sandbox** (`src/ai/tools/`, `src/net/ssrfGuard.ts`) — allowlist-only
-   registry; default-empty fs/network/shell capability scopes; per-tool
-   timeouts; **human approval required for dangerous actions**; output
-   redaction; untrusted-context wrapping for prompt-injection defense.
+</div>
 
-**Packaging & docs (P0 complete):**
-- **Docker** — multi-stage, non-root (uid 10001), healthchecked image
-  (`docker/Dockerfile`); dev + prod compose with no default credentials,
-  loopback binds, `read_only`/`cap_drop`/`no-new-privileges` (`docker/`).
-- **CI** — `.github/workflows/ci.yml` (typecheck + build + real Testcontainers
-  tests) and `security.yml` (npm audit, OSV, gitleaks, CycloneDX SBOM; weekly).
-- **Security docs** — `SECURITY.md`, `SECURITY_ARCHITECTURE.md`,
-  `THREAT_MODEL.md`, `ENTERPRISE_READINESS.md`, `PRIVACY_AND_GDPR.md`,
-  `AI_SECURITY_MODEL.md`, `SUPPLY_CHAIN_SECURITY.md`, `DEPLOYMENT_SECURITY.md`,
-  `INCIDENT_RESPONSE.md`, and `docs/security/{ASVS_MAPPING,LLM_TOP_10_MAPPING,RISK_REGISTER}.md`.
+---
 
-**P1 (delivered):** OIDC SSO (PKCE) + SAML stub (`src/auth/oidc.provider.ts`,
-`src/auth/saml.provider.ts`); MFA/TOTP with backup codes (`src/auth/mfa.ts`);
-SSE streaming (`src/http/aiStream.ts`); cloud providers — OpenAI-compatible +
-Anthropic (`src/ai/providers/`); AES-256-GCM secrets at rest (`src/lib/crypto.ts`).
+## Was ist Capybara_AI?
 
-**Deferred to P1-remaining/P2:** full SAML, scoped API tokens, off-box audit
-anchoring, broader field-level encryption/KMS, and process/microVM isolation for
-tools. See [`ENTERPRISE_READINESS.md`](./ENTERPRISE_READINESS.md).
+Capybara_AI ist eine **selbst gehostete KI-Plattform** für Unternehmen, die ihre
+Daten nicht in fremde Clouds geben dürfen oder wollen. Chat mit lokalen oder
+Cloud-LLMs, Dokumenten-Intelligenz (RAG) über die eigene Wissensbasis, ein
+Admin-Backend, SSO/SCIM-Anbindung — und das alles mit nachweisbarer
+DSGVO-Konformität und EU-AI-Act-Transparenz.
 
-## Tech stack
+Gebaut für Auditierbarkeit: Jede Sicherheitsentscheidung ist eine
+**Architekturentscheidung von Tag 1**, kein nachträglicher Aufsatz. Gefährliche
+Defaults scheitern *fail-closed* — die Produktion startet gar nicht erst mit
+schwachen Secrets.
 
-Node.js 22 · TypeScript (strict, ESM) · Fastify (P0) · Drizzle ORM ·
-PostgreSQL 16 (RLS) · Zod · Argon2id · Vitest + Testcontainers · Apache-2.0.
+## Highlights
 
-## Running the tests
+| Bereich | Was drin ist |
+| --- | --- |
+| 🔐 **Zero-Trust-Mandanten** | PostgreSQL Row-Level-Security unter einer restriktiven Rolle (NOBYPASSRLS). Cross-Tenant-Zugriff ist auf DB-Ebene unmöglich — auch bei vergessenem `WHERE`. |
+| 🛡️ **Fail-closed Konfiguration** | Produktion verweigert den Start bei fehlenden/schwachen Secrets, Wildcard-CORS, unsicheren Cookies oder DB-URL ohne TLS. |
+| 👤 **Auth & SSO** | Argon2id, opaque Server-Sessions (nur SHA-256-Hash gespeichert), TOTP-MFA, OIDC-SSO, **SCIM 2.0** User-Provisioning. |
+| 🧩 **RBAC** | `owner / admin / member / viewer` mit Least-Privilege-Guards (401/403, deny-by-default). |
+| 📚 **Dokumenten-Intelligenz (RAG)** | pgvector-Suche, Ingestion-Pipeline, klassifizierungsbasierte ACL, optionaler ClamAV-Scan, Lifecycle & Legal Hold. |
+| 🤖 **LLM-Provider-Abstraktion** | Lokal zuerst (Ollama/vLLM, OpenAI-kompatibel) + Cloud (OpenAI, Anthropic). Endpunkte sind **server-only** — schließt die `base_url`-SSRF-Klasse. |
+| 📜 **EU AI Act & DSGVO** | Transparenz-Envelope auf jeder KI-Antwort, KI-Inventar, menschliche Aufsicht (Human Oversight), atomare GDPR-Löschung, Datenexport. |
+| 🔏 **Field-Level Encryption** | AES-256-GCM at rest, Envelope-Verschlüsselung (KEK→DEK) mit **Key-Rotation**, die Chunks & Nachrichten unter neuem Schlüssel re-verschlüsselt. |
+| 🧾 **Tamper-Evident Audit** | Hash-verkettete `security_events` (append-only), offline verifizierbar (`npm run verify:chain`). |
+| 🚦 **Layered Rate Limiting** | Pro IP/Konto/LLM/Upload, Speicherquota pro Org, Brute-Force-Lockout mit exponentiellem Backoff + Admin-Unlock. |
+| 🐳 **Gehärtetes Docker** | Non-root, `cap_drop ALL`, `no-new-privileges`, read-only FS, Postgres nicht veröffentlicht, fail-closed bei fehlenden Secrets. |
+| ♻️ **Backup & DR** | `backup.sh` / `restore.sh`, Retention, optionale GPG-Verschlüsselung, Disaster-Recovery-Runbook, tiefer `/healthz`-Check. |
 
-Tests spin up a real PostgreSQL 16 via **Testcontainers**, so a working Docker
-daemon is required.
+## Architektur (Überblick)
+
+```
+                         ┌────────────────────────────────────────────┐
+        HTTPS (Proxy)    │                Capybara_AI                  │
+   ───────────────────▶  │  Fastify 5  ·  Helmet/CORS/CSRF/Rate-Limit  │
+                         │                                            │
+                         │  Auth (Argon2id, OIDC, MFA, SCIM)          │
+                         │  RBAC Guards  ·  Tenant Context (ALS)       │
+                         │  RAG (pgvector)  ·  LLM Provider Abstraktion│
+                         │  EU-AI-Act Envelope · Audit Hash-Chain      │
+                         └───────────────┬───────────────┬────────────┘
+                                         │               │
+                       restricted role   │               │ server-only
+                       (NOBYPASSRLS)      ▼               ▼ endpoints
+                              ┌────────────────────┐   ┌──────────────┐
+                              │ PostgreSQL 16 +    │   │ Ollama/vLLM/ │
+                              │ pgvector (RLS)     │   │ OpenAI/Claude│
+                              └────────────────────┘   └──────────────┘
+```
+
+## Quickstart (Docker)
+
+```bash
+git clone https://github.com/BEKO2210/Capybara_AI.git
+cd Capybara_AI/docker
+cp ../.env.example .env          # starke Werte eintragen!
+
+# Pflicht: POSTGRES_PASSWORD, DB_APP_PASSWORD, COOKIE_SECRET, SESSION_SECRET
+# Produktion zusätzlich: ENCRYPTION_KEY, DOCUMENT_ENCRYPTION_KEY, MASTER_KEK,
+#                        CORS_ALLOWED_ORIGINS, APP_BASE_URL
+
+docker compose -f docker-compose.yml up --build
+# App lauscht auf 127.0.0.1:3000 (Loopback). Health: GET /healthz
+```
+
+Secrets generieren:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"  # COOKIE/SESSION
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"     # ENCRYPTION_KEY / MASTER_KEK
+```
+
+## Lokale Entwicklung
 
 ```bash
 npm install
-npm run typecheck
-npm test
+npm run typecheck      # strict TypeScript, ESM
+npm test               # Vitest + Testcontainers (echtes Postgres + RLS)
+npm run db:migrate     # Migrationen (privilegierte Rolle)
+npm run verify:chain   # Audit-Kette prüfen
 ```
 
-Expected: 9 test files, 62 tests passing.
+Tests nutzen Testcontainers mit pgvector. Die meisten laufen gegen eine echte
+PostgreSQL-Instanz — Tenant-Isolation wird real (inkl. direktem RLS-Probe)
+verifiziert, nicht gemockt.
 
-## Configuration
+## Systemanforderungen
 
-All environment variables are documented in [`.env.example`](./.env.example).
-In `production`, `loadConfig()` aggregates every problem and exits rather than
-starting with an insecure default (fail-closed).
+| | Minimum (Self-Host) |
+| --- | --- |
+| **Container** | Docker / Compose |
+| **RAM** | 16 GB (mehr für größere lokale Modelle) |
+| **CPU** | 4 Cores |
+| **Disk** | 100 GB (Dokumente + DB + Modelle) |
+| **DB** | PostgreSQL 16 mit `vector`-Extension |
+| **LLM** | Ollama/vLLM lokal *oder* OpenAI/Anthropic-Schlüssel |
 
-## Security model (so far)
+## Sicherheit & Compliance
 
-- **Least privilege at the DB:** migrations run as a privileged role; the app
-  runs as `capybara_app` which cannot bypass RLS.
-- **Defense in depth for tenancy:** application-layer scoping (`withTenant`)
-  **and** database-layer RLS — both must be bypassed to cross a tenant boundary.
-- **Fail-closed everywhere:** invalid config aborts startup; unknown tenant
-  context returns zero rows; auth failures and tampered sessions return `null`,
-  never an exception mistaken for success.
-- **No secrets in code or VCS:** secrets come from the environment; `.env` is
-  gitignored; `.env.example` ships only rejected placeholders.
+- **Threat Model**, **Security Architecture**, **Incident Response** und
+  **Deployment Security** im Repo dokumentiert.
+- **OWASP ASVS 5.0** und **OWASP Top 10 für LLM/GenAI 2025** sind auf
+  implementierende Module + Tests gemappt (`docs/security/`).
+- **DSGVO/GDPR**: Datenkarte, Retention, atomare Löschung, Export — siehe
+  `PRIVACY_AND_GDPR.md`.
+- **EU AI Act**: Transparenz auf jeder KI-Antwort, KI-Inventar, Human Oversight.
+- **Supply Chain**: `npm audit`, OSV-Scan, gitleaks, CycloneDX-SBOM in CI.
 
-## License
+Sicherheitslücke gefunden? Bitte **nicht** öffentlich melden — siehe
+[SECURITY.md](SECURITY.md).
 
-Apache-2.0 — see [`LICENSE`](./LICENSE) and [`NOTICE`](./NOTICE).
+## Dokumentation
+
+- [`docs/DISASTER_RECOVERY.md`](docs/DISASTER_RECOVERY.md) — Backup/Restore-Runbook
+- [`docker/README.md`](docker/README.md) — Container & Stacks
+- [`ENTERPRISE_READINESS.md`](ENTERPRISE_READINESS.md) — Reifegrad-Checkliste
+- [`docs/guides/`](docs/guides/) — SSO, SCIM, API-Quickstart, Webhooks
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) · [`CHANGELOG.md`](CHANGELOG.md)
+
+## Lizenz
+
+[Apache-2.0](LICENSE) — inkl. Patent-Grant, unternehmensfreundlich.
+Drittanbieter-Hinweise in [`NOTICE`](NOTICE) / [`ACKNOWLEDGMENTS.md`](ACKNOWLEDGMENTS.md).
+
+---
+
+<div align="center">
+
+**Made in Germany 🇩🇪**
+
+Autor: **Belkis Aslani** ([@BEKO2210](https://github.com/BEKO2210)) — he/him.
+
+</div>

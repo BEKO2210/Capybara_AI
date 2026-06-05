@@ -9,6 +9,7 @@ declare module 'fastify' {
   interface FastifyRequest {
     authContext?: AuthContext;
     apiKey?: { keyId: string; orgId: string; scopes: string[] };
+    scimOrgId?: string;
   }
 }
 
