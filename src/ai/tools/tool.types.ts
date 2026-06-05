@@ -1,4 +1,5 @@
 import type { z } from 'zod';
+import type { RiskLevel } from '../../db/schema/index.js';
 
 /**
  * Tool sandbox type model.
@@ -71,6 +72,11 @@ export interface ToolDefinition<TArgs = unknown> {
   inputSchema: z.ZodType<TArgs>;
   /** Dangerous tools require explicit human approval before each execution. */
   dangerous: boolean;
+  /**
+   * EU AI Act Art. 14 risk level. Tools at HIGH or above require a DB-backed
+   * human-oversight approval (oversight_requests) before execution.
+   */
+  riskLevel?: RiskLevel;
   scopes: ToolScopes;
   /** Hard wall-clock cap for a single invocation. */
   timeoutMs: number;

@@ -8,6 +8,8 @@ import { encryptSecret, deriveTenantKey } from '../../lib/crypto.js';
 import { conversations, messages } from '../../db/schema/index.js';
 import { searchDocuments, type SearchDeps, type SearchResult } from '../../documents/search.js';
 import type { LlmProvider, ChatMessage } from '../../ai/providers/provider.interface.js';
+import { ensureInventoryEntry } from '../../compliance/inventory.js';
+import { buildAiMeta } from '../aiResponseEnvelope.js';
 
 const NO_DOCS_MESSAGE = 'Keine relevanten Dokumente gefunden';
 
@@ -111,8 +113,21 @@ export function registerRagChatRoute(app: FastifyInstance, deps: RagChatDeps): v
         }
       }
 
-      // EU AI Act transparency: every response is explicitly marked AI-generated.
-      const metadata = { sources, model, ai_generated: true, timestamp: new Date().toISOString() };
+      // EU AI Act transparency: full ai_meta envelope (Art. 50), linked to the
+      // KI-Inventar entry for this model.
+      const entry = await ensureInventoryEntry(
+        deps.searchDeps.db,
+        { orgId: ctx.orgId, userId: ctx.userId, clearance: clearanceForRole(ctx.role) },
+        { modelName: model, provider: model },
+      );
+      const metadata = buildAiMeta({
+        model,
+        provider: model,
+        sources,
+        inventoryEntryId: entry.id,
+        riskClass: entry.riskClass,
+        humanOversightRequired: entry.humanOversightRequired,
+      });
       if (!clientClosed && !res.writableEnded) {
         await sse(reply, `event: metadata\ndata: ${JSON.stringify(metadata)}\n\n`);
         await sse(reply, 'event: done\ndata: {}\n\n');

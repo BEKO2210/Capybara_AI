@@ -20,3 +20,7 @@ export { documentAccessLog, DOCUMENT_ACTIONS } from './documentAccessLog.js';
 export type { DocumentAccessEntry, NewDocumentAccessEntry, DocumentAction } from './documentAccessLog.js';
 export { conversations, messages } from './conversations.js';
 export type { Conversation, Message, NewMessage } from './conversations.js';
+export { aiInventoryEntries, RISK_CLASSES } from './aiInventory.js';
+export type { AiInventoryEntry, NewAiInventoryEntry, RiskClass } from './aiInventory.js';
+export { oversightRequests, RISK_LEVELS, OVERSIGHT_STATUSES, RISK_LEVEL_RANK } from './oversightRequests.js';
+export type { OversightRequest, NewOversightRequest, RiskLevel, OversightStatus } from './oversightRequests.js';

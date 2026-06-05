@@ -20,6 +20,8 @@ records of processing, DPAs, and (where required) a DPIA.
 | Document chunks + embeddings | Varies (derived from documents) | `document_chunks` (content AES-256-GCM encrypted) | As above | Tied to parent document |
 | RAG chat messages | Varies (may contain PII) | `messages` (content AES-256-GCM encrypted) | Contract | Operator-defined |
 | Document access log | Access metadata; query **hash** only | `document_access_log` (append-only) | Legitimate interest (security) | Operator-defined |
+| KI-Inventar (AI usage registry) | Model/usage metadata (no personal data) | `ai_inventory_entries` | Legal obligation (EU AI Act Art. 4) | Life of deployment |
+| Oversight requests | Tool args (may contain PII) **encrypted** + hash | `oversight_requests` (forward-only) | Legal obligation (EU AI Act Art. 14) | Operator-defined |
 
 Document/chunk/message content is **encrypted at rest** with a per-tenant key
 (HKDF from `DOCUMENT_ENCRYPTION_KEY`). Query text is never stored — only its

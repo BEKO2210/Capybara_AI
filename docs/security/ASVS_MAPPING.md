@@ -23,6 +23,18 @@ implementing module and, where applicable, the test.
 | **Logging & error handling** (cross-cutting) | Tamper-evident security logging; no sensitive data in logs | ✅ | Hash-chained `security_events` (append-only, `src/audit/`); Pino redaction of auth/cookie headers (`src/server.ts`). `tests/audit/chain.test.ts` |
 | **SSRF defense** (API/comms) | Block internal/metadata targets | ✅ | Server-only LLM endpoints + `src/net/ssrfGuard.ts`. `tests/ai/provider.test.ts`, `tests/ai/ssrf.test.ts` |
 
+## Governance (EU AI Act, beyond ASVS)
+
+- **KI-Inventar (Art. 4):** org-scoped AI usage registry, auto-populated, PDF
+  export (`src/compliance/inventory.ts`, `src/compliance/pdf.ts`).
+- **Human oversight (Art. 14):** DB-backed, forward-only, audited approval for
+  HIGH/CRITICAL tools (`src/compliance/oversight.ts`).
+- **Transparency (Art. 50):** `ai_meta` envelope on every AI response
+  (`src/http/aiResponseEnvelope.ts`).
+- **Compliance report:** regulator-/works-council-ready German PDF
+  (`src/compliance/report.ts`). Endpoints are RBAC-gated (admin/owner). Tests in
+  `tests/compliance/`.
+
 ## Delivered in P1
 
 - **V10 OIDC** (PKCE) and **MFA/TOTP** with backup codes (`src/auth/oidc.provider.ts`,

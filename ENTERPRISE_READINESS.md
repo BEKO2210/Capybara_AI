@@ -31,6 +31,10 @@ tested today**, and what is deferred to P1/P2. No capability is claimed as
 | Classification-aware ACL retrieval (app + RLS) | ✅ Implemented + tested | `src/documents/search.ts`, `src/db/sql/0004_documents.sql` |
 | Document encryption at rest (per-tenant AES-256-GCM) | ✅ Implemented + tested | `src/documents/storage.ts`, `src/lib/crypto.ts` |
 | GDPR erasure workflow (documents/chunks/messages) | ✅ Implemented + tested | `src/documents/erasure.ts`, `tests/documents/lifecycle.test.ts` |
+| EU AI Act KI-Inventar (Art. 4) + PDF export | ✅ Implemented + tested | `src/compliance/inventory.ts`, `tests/compliance/` |
+| Human oversight enforcement (Art. 14) | ✅ Implemented + tested | `src/compliance/oversight.ts`, sandbox integration |
+| Transparency envelope (Art. 50) | ✅ Implemented + tested | `src/http/aiResponseEnvelope.ts` |
+| Compliance report PDF (regulator-ready) | ✅ Implemented + tested | `src/compliance/report.ts`, `src/compliance/pdf.ts` |
 | Cloud providers (OpenAI-compat, Anthropic) | ✅ Implemented + tested | `src/ai/providers/`, `tests/ai/cloud-providers.test.ts` |
 | Encryption at rest (field-level, AES-256-GCM) | 🟡 Secrets (e.g. TOTP) | `src/lib/crypto.ts`; broader field-level + KMS is P2 |
 | Per-token fine-grained scopes / API keys | ❌ P1/P2 | — |
@@ -64,6 +68,11 @@ data on production code paths — demo/fixtures live only under `tests/`.
 
 - **P1 (delivered):** OIDC (PKCE) + MFA/TOTP; SSE streaming; cloud providers
   (OpenAI-compatible + Anthropic); AES-256-GCM secrets at rest.
+- **Phase A (delivered):** Document Intelligence / RAG (pgvector, ACL search,
+  GDPR erasure).
+- **Phase B (delivered):** EU AI Act compliance — KI-Inventar (Art. 4), human
+  oversight (Art. 14), transparency envelope (Art. 50), compliance report PDF.
+- **Phase C (next):** TBD.
 - **P1 (remaining):** scoped API tokens; security-event anchoring/log shipping;
   approval UI + notifications.
 - **P2:** full SAML; microVM/worker isolation for dangerous tools; broader
