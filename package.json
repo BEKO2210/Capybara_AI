@@ -1,0 +1,32 @@
+{
+  "name": "capybara-ai",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Enterprise security-first, self-hostable AI system",
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22 <23"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:migrate": "tsx src/db/migrate.ts"
+  },
+  "dependencies": {
+    "@node-rs/argon2": "2.0.2",
+    "drizzle-orm": "0.45.2",
+    "postgres": "3.4.9",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@testcontainers/postgresql": "12.0.1",
+    "@types/node": "25.9.1",
+    "drizzle-kit": "0.31.10",
+    "tsx": "4.22.4",
+    "typescript": "6.0.3",
+    "vitest": "4.1.8"
+  }
+}

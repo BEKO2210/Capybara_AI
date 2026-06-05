@@ -1,0 +1,16 @@
+Capybara_AI
+Copyright 2026 The Capybara_AI Authors
+
+This product includes software developed by the Capybara_AI project.
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+------------------------------------------------------------------------------
+Third-party attributions
+------------------------------------------------------------------------------
+This repository was informed conceptually (no source code was copied) by the
+Odysseus project (https://github.com/pewdiepie-archdaemon/odysseus), which is
+distributed under the MIT License. Security patterns such as untrusted-context
+wrapping for LLM inputs and fail-closed tool gating were studied as prior art.
+
+If, in future phases, any third-party source code is incorporated, its license
+and attribution will be recorded here as required.
