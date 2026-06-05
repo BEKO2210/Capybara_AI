@@ -3,32 +3,46 @@
 Enterprise, security-first, self-hostable AI system. Built secure-by-default
 from the first commit: multi-tenant, zero-trust, fail-closed.
 
-> **Status: foundation slice.** This commit delivers a reviewable *thin vertical
-> slice* of the secure foundation — not the full product. See
-> [Scope](#scope-of-this-slice) below.
+> **Status: P0 secure foundation (in progress).** The core security pillars are
+> implemented and tested. Packaging (Docker hardening, CI/supply-chain) and the
+> full security-document suite are still pending. See [Scope](#scope) below.
 
-## Scope of this slice
+## Scope
 
-Three foundation pillars, each with a passing integration test that proves it
-**works and fails correctly**:
+Eight foundation pillars, each with passing integration tests proving they
+**work and fail correctly** (62 tests total):
 
-1. **Fail-closed configuration** (`src/config/`) — the app refuses to start in
-   production when required secrets are missing, weak, placeholder, or when CORS
-   is wildcarded / cookies are insecure / the DB URL lacks TLS. Development uses
-   clearly-ephemeral generated secrets so local work needs no insecure defaults.
+1. **Fail-closed configuration** (`src/config/`) — production refuses to start
+   when required secrets are missing, weak, placeholder, or when CORS is
+   wildcarded / cookies are insecure / the DB URL lacks TLS. Dev uses
+   clearly-ephemeral generated secrets — no insecure defaults.
 2. **Database + PostgreSQL Row-Level Security** (`src/db/`, `src/tenancy/`) —
-   tenant isolation enforced at the **database** layer. The app connects as a
-   restricted `capybara_app` role (non-superuser, **NOBYPASSRLS**). RLS policies
-   key off a per-transaction `app.current_org` GUC set via `withTenant()`. A
-   forgotten `WHERE` cannot leak across tenants; deny-by-default when no tenant
-   context is set.
-3. **Auth abstraction** (`src/auth/`) — Argon2id password hashing, an
-   OIDC/SAML-ready `AuthProvider` interface, a local dev provider, and opaque
-   server-side sessions that store **only the SHA-256 hash** of the token.
+   tenant isolation at the **database** layer. The app connects as a restricted
+   `capybara_app` role (non-superuser, **NOBYPASSRLS**); RLS keys off a
+   per-transaction `app.current_org` GUC set via `withTenant()`. Deny-by-default
+   when no tenant context is set.
+3. **Auth abstraction** (`src/auth/`) — Argon2id hashing, an OIDC/SAML-ready
+   `AuthProvider` interface, a local dev provider, and opaque server-side
+   sessions storing **only the SHA-256 hash** of the token.
+4. **RBAC** (`src/rbac/`) — least-privilege `owner/admin/member/viewer`
+   capability matrix; fail-closed Fastify guards (401/403).
+5. **HTTP security middleware** (`src/http/`, `src/server.ts`) — helmet CSP,
+   strict CORS (no wildcard), CSRF on state-changing routes, rate limiting,
+   fail-closed error handler that never leaks internals.
+6. **Audit + tamper-evident security log** (`src/audit/`) — queryable audit
+   trail plus a hash-chained, append-only security-event log (UPDATE/DELETE
+   revoked from the app role) with an offline chain verifier.
+7. **LLM provider abstraction** (`src/ai/providers/`) — server-only endpoints;
+   callers select a provider by id and **cannot** supply a base URL (closes the
+   SSRF-via-base_url gap). OpenAI-compatible adapter (Ollama/vLLM).
+8. **AI tool sandbox** (`src/ai/tools/`, `src/net/ssrfGuard.ts`) — allowlist-only
+   registry; default-empty fs/network/shell capability scopes; per-tool
+   timeouts; **human approval required for dangerous actions**; output
+   redaction; untrusted-context wrapping for prompt-injection defense.
 
-Deferred to the full P0 build (not in this slice): RBAC guards, HTTP security
-middleware (helmet/CSRF/CORS/rate-limit), audit + tamper-evident logging, the AI
-provider + tool sandbox, Docker hardening, CI, and the security document suite.
+**Still pending for P0:** Docker hardening, CI + supply-chain scanning (SBOM,
+osv-scan, gitleaks), and the security-document suite (SECURITY_ARCHITECTURE,
+THREAT_MODEL, ASVS/LLM-Top-10 mappings, etc.).
 
 ## Tech stack
 
@@ -46,7 +60,7 @@ npm run typecheck
 npm test
 ```
 
-Expected: 3 test files, 20 tests passing (config / RLS isolation / auth).
+Expected: 9 test files, 62 tests passing.
 
 ## Configuration
 

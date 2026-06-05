@@ -1,0 +1,136 @@
+import { createFsCapability } from './scopes/fs.scope.js';
+import { createNetCapability } from './scopes/network.scope.js';
+import { createShellCapability } from './scopes/shell.scope.js';
+import { redact as defaultRedact } from '../redaction/redactor.js';
+import type { ApprovalGate } from './approval.js';
+import type { ToolRegistry } from './registry.js';
+import { UnknownToolError } from './registry.js';
+import type { ToolContext, ToolResult, ToolScopes } from './tool.types.js';
+
+export type ToolDecision = 'allowed' | 'denied' | 'pending_approval';
+
+export interface ToolInvocation {
+  tool: string;
+  decision: ToolDecision;
+  /** Present when decision === 'allowed'. */
+  result?: ToolResult;
+  /** Machine-readable reason for denial/pending. */
+  reason?: string;
+  /** Redacted copy of the arguments, safe to log/persist. */
+  redactedArgs: unknown;
+}
+
+export interface ExecuteOptions {
+  approvals: ApprovalGate;
+  /** Secrets available to grant; only those listed in a tool's scope are passed. */
+  secrets?: Record<string, string>;
+  /** Override redaction (defaults to the pattern-based redactor). */
+  redactor?: (value: unknown) => unknown;
+  /** Injectable fetch for network-scoped tools (tests). */
+  fetchImpl?: typeof fetch;
+}
+
+class ToolTimeoutError extends Error {
+  constructor() {
+    super('tool execution timed out');
+    this.name = 'ToolTimeoutError';
+  }
+}
+
+function buildContext(
+  scopes: ToolScopes,
+  deps: { secrets: Record<string, string>; signal: AbortSignal; fetchImpl?: typeof fetch },
+): ToolContext {
+  const grantedSecrets: Record<string, string> = {};
+  for (const key of scopes.secrets ?? []) {
+    const value = deps.secrets[key];
+    if (value !== undefined) grantedSecrets[key] = value;
+  }
+
+  return {
+    fs: createFsCapability(scopes.fs),
+    net: createNetCapability(scopes.network, deps.fetchImpl ?? fetch),
+    shell: createShellCapability(scopes.shell),
+    secrets: Object.freeze(grantedSecrets),
+    signal: deps.signal,
+  };
+}
+
+function abortRejection(signal: AbortSignal): Promise<never> {
+  return new Promise<never>((_, reject) => {
+    if (signal.aborted) return reject(new ToolTimeoutError());
+    signal.addEventListener('abort', () => reject(new ToolTimeoutError()), { once: true });
+  });
+}
+
+function errorMessage(e: unknown): string {
+  return e instanceof Error ? e.message : String(e);
+}
+
+/**
+ * Execute a tool through the sandbox. Order of enforcement (all fail closed):
+ *   1. allowlist  — unknown tool => denied.
+ *   2. validation — args must satisfy the tool's Zod schema.
+ *   3. approval   — dangerous tools require an approved invocation.
+ *   4. scopes     — the handler only receives capabilities for its scopes.
+ *   5. timeout    — hard wall-clock cap via AbortController.
+ * Arguments are redacted for the returned record regardless of outcome.
+ */
+export async function executeTool(
+  registry: ToolRegistry,
+  name: unknown,
+  rawArgs: unknown,
+  options: ExecuteOptions,
+): Promise<ToolInvocation> {
+  const redact = options.redactor ?? defaultRedact;
+  const redactedArgs = redact(rawArgs);
+
+  // 1. Allowlist.
+  let def;
+  try {
+    def = registry.get(name);
+  } catch (e) {
+    if (e instanceof UnknownToolError) {
+      return { tool: String(name), decision: 'denied', reason: 'not_allowlisted', redactedArgs };
+    }
+    throw e;
+  }
+
+  // 2. Argument validation.
+  const parsed = def.inputSchema.safeParse(rawArgs);
+  if (!parsed.success) {
+    return { tool: def.name, decision: 'denied', reason: 'invalid_arguments', redactedArgs };
+  }
+
+  // 3. Human approval for dangerous tools.
+  if (def.dangerous) {
+    const approved = await options.approvals.isApproved(def.name, parsed.data);
+    if (!approved) {
+      return {
+        tool: def.name,
+        decision: 'pending_approval',
+        reason: 'awaiting_human_approval',
+        redactedArgs,
+      };
+    }
+  }
+
+  // 4 + 5. Scoped capabilities + hard timeout.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), def.timeoutMs);
+  const ctx = buildContext(def.scopes, {
+    secrets: options.secrets ?? {},
+    signal: controller.signal,
+    ...(options.fetchImpl ? { fetchImpl: options.fetchImpl } : {}),
+  });
+
+  try {
+    const result = await Promise.race([def.handler(parsed.data, ctx), abortRejection(controller.signal)]);
+    return { tool: def.name, decision: 'allowed', result, redactedArgs };
+  } catch (e) {
+    const error = e instanceof ToolTimeoutError ? 'timeout' : errorMessage(e);
+    return { tool: def.name, decision: 'allowed', result: { ok: false, error }, redactedArgs };
+  } finally {
+    clearTimeout(timer);
+  }
+}

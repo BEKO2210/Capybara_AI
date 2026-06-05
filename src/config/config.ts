@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { envSchema, type RawEnv } from './env.schema.js';
 import { assessSecret } from './secrets.js';
+import { llmProvidersSchema, type LlmProviderConfig } from '../ai/providers/registry.js';
 
 /**
  * Application configuration, derived once at startup from the environment.
@@ -23,6 +24,12 @@ export interface Config {
   readonly corsAllowedOrigins: readonly string[];
   readonly secureCookies: boolean;
   readonly logLevel: RawEnv['LOG_LEVEL'];
+  readonly rateLimit: { readonly max: number; readonly windowMs: number };
+  readonly llm: {
+    readonly providers: readonly LlmProviderConfig[];
+    readonly defaultProvider: string | undefined;
+    readonly requestTimeoutMs: number;
+  };
 }
 
 /** A single fail-closed configuration problem. Never contains secret values. */
@@ -145,6 +152,24 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     issues.push({ variable: 'SECURE_COOKIES', reason: 'must be true in production' });
   }
 
+  // 7. LLM providers — server-only endpoint definitions (fail-closed parse).
+  let llmProviders: LlmProviderConfig[] = [];
+  if (e.LLM_PROVIDERS) {
+    try {
+      const parsed = llmProvidersSchema.safeParse(JSON.parse(e.LLM_PROVIDERS));
+      if (!parsed.success) {
+        issues.push({ variable: 'LLM_PROVIDERS', reason: 'invalid provider definition(s)' });
+      } else {
+        llmProviders = parsed.data;
+      }
+    } catch {
+      issues.push({ variable: 'LLM_PROVIDERS', reason: 'must be valid JSON' });
+    }
+  }
+  if (e.LLM_DEFAULT_PROVIDER && !llmProviders.some((p) => p.id === e.LLM_DEFAULT_PROVIDER)) {
+    issues.push({ variable: 'LLM_DEFAULT_PROVIDER', reason: 'does not match any configured provider id' });
+  }
+
   if (issues.length > 0) {
     throw new ConfigError(issues);
   }
@@ -164,6 +189,12 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     corsAllowedOrigins: isProduction ? origins : origins.length > 0 ? origins : ['http://localhost:3000'],
     secureCookies: isProduction ? true : env['SECURE_COOKIES'] !== 'false',
     logLevel: e.LOG_LEVEL,
+    rateLimit: { max: e.RATE_LIMIT_MAX, windowMs: e.RATE_LIMIT_WINDOW_MS },
+    llm: {
+      providers: llmProviders,
+      defaultProvider: e.LLM_DEFAULT_PROVIDER,
+      requestTimeoutMs: e.LLM_REQUEST_TIMEOUT_MS,
+    },
   };
 
   return Object.freeze(config);
