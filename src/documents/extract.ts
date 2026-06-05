@@ -1,6 +1,6 @@
 import { PDFParse } from 'pdf-parse';
 import mammoth from 'mammoth';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 export type DocKind = 'pdf' | 'docx' | 'xlsx' | 'txt' | 'md' | 'eml';
 
@@ -31,11 +31,20 @@ export async function extractText(buffer: Buffer, kind: DocKind): Promise<string
       return result.value;
     }
     case 'xlsx': {
-      const wb = XLSX.read(buffer, { type: 'buffer' });
-      const first = wb.SheetNames[0];
-      if (!first) return '';
-      const sheet = wb.Sheets[first];
-      return sheet ? XLSX.utils.sheet_to_csv(sheet) : '';
+      const wb = new ExcelJS.Workbook();
+      const ab = buffer.buffer.slice(
+        buffer.byteOffset,
+        buffer.byteOffset + buffer.byteLength,
+      ) as ArrayBuffer;
+      await wb.xlsx.load(ab);
+      const ws = wb.worksheets[0];
+      if (!ws) return '';
+      const lines: string[] = [];
+      ws.eachRow((row) => {
+        const values = Array.isArray(row.values) ? row.values.slice(1) : [];
+        lines.push(values.map((v) => (v == null ? '' : String(v))).join(','));
+      });
+      return lines.join('\n');
     }
     case 'txt':
     case 'md':

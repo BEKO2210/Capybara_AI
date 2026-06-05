@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { and, eq, sql } from 'drizzle-orm';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import { PDFDocument } from 'pdf-lib';
 import { Document, Packer, Paragraph } from 'docx';
 import { startTestDb, type TestDb } from '../setup/testDb.js';
@@ -27,11 +27,11 @@ async function docxBuffer(text: string): Promise<Buffer> {
   const d = new Document({ sections: [{ children: [new Paragraph(text)] }] });
   return Packer.toBuffer(d);
 }
-function xlsxBuffer(rows: string[][]): Buffer {
-  const ws = XLSX.utils.aoa_to_sheet(rows);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
-  return XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
+async function xlsxBuffer(rows: string[][]): Promise<Buffer> {
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('Sheet1');
+  rows.forEach((r) => ws.addRow(r));
+  return Buffer.from(await wb.xlsx.writeBuffer());
 }
 
 beforeAll(async () => {
@@ -53,7 +53,7 @@ describe('documents — ingestion across formats', () => {
     const cases: Array<{ mime: string; data: Buffer; title: string }> = [
       { mime: 'text/plain', data: Buffer.from(long), title: 'txt-doc' },
       { mime: 'text/markdown', data: Buffer.from(`# Heading\n\n${long}`), title: 'md-doc' },
-      { mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', data: xlsxBuffer([['finance', 'revenue'], ['q1', '100']]), title: 'xlsx-doc' },
+      { mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', data: await xlsxBuffer([['finance', 'revenue'], ['q1', '100']]), title: 'xlsx-doc' },
       { mime: 'application/pdf', data: await pdfBuffer('finance report revenue growth ' + long.slice(0, 200)), title: 'pdf-doc' },
       { mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', data: await docxBuffer(long), title: 'docx-doc' },
     ];

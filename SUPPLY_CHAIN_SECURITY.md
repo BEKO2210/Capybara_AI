@@ -26,6 +26,22 @@ with NIST SSDF (PW/PS/RV practices). Automated in
 The weekly schedule (`cron: 0 6 * * 1`) catches advisories disclosed after a
 commit landed. High-or-above audit findings and OSV/gitleaks hits fail the job.
 
+## Dependency `overrides`
+
+`package.json` `overrides` force-resolve transitive packages to patched
+versions, removing the vulnerable ones from the tree entirely (so both `npm
+audit` and OSV stay clean without suppressions):
+
+- `esbuild >=0.25.0` — drizzle-kit's deprecated `@esbuild-kit` chain pulled a
+  vulnerable esbuild (dev-server advisory; dev-only).
+- `uuid >=11.1.1` — `exceljs` depended on an old `uuid` (GHSA-w5hq-g745-h8pq).
+
+**Spreadsheet parsing note:** we use `exceljs` (not the npm `xlsx`/SheetJS
+package). The npm `xlsx` build is genuinely vulnerable, and SheetJS publishes
+fixes only via its own CDN — an unusual supply-chain shape that also trips OSV
+regardless of version. `exceljs` is maintained on npm and, with the `uuid`
+override, leaves zero advisories.
+
 ## SBOM
 
 A CycloneDX JSON SBOM (`sbom.cdx.json`) is generated in CI and uploaded as a
