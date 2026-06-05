@@ -56,6 +56,21 @@ export const envSchema = z.object({
   OIDC_CLIENT_ID: z.string().optional(),
   OIDC_CLIENT_SECRET: z.string().optional(),
   OIDC_REDIRECT_URI: z.string().url().optional(),
+
+  // Document intelligence (RAG). Separate key from ENCRYPTION_KEY; per-tenant
+  // subkeys are derived from it via HKDF.
+  DOCUMENT_ENCRYPTION_KEY: z.string().optional(),
+  EMBEDDING_PROVIDER: z.enum(['local', 'openai']).default('local'),
+  EMBEDDING_MODEL: z.string().default('nomic-embed-text'),
+  OLLAMA_BASE_URL: z.string().url().optional(),
+  OPENAI_EMBEDDING_MODEL: z.string().default('text-embedding-3-small'),
+  OPENAI_EMBEDDING_BASE_URL: z.string().url().default('https://api.openai.com/v1'),
+  OPENAI_API_KEY: z.string().optional(),
+  MAX_UPLOAD_SIZE_MB: z.coerce.number().int().positive().default(50),
+  // If set, uploaded files are scanned via this ClamAV unix socket before storage.
+  CLAMAV_SOCKET: z.string().optional(),
+  // Base directory for encrypted document storage.
+  DOCUMENT_STORAGE_DIR: z.string().default('/data/documents'),
 });
 
 export type RawEnv = z.infer<typeof envSchema>;

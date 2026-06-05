@@ -41,6 +41,19 @@ export interface Config {
         readonly redirectUri: string;
       }
     | undefined;
+  /** Master key for document/chunk encryption (per-tenant subkeys derived via HKDF). */
+  readonly documentEncryptionKey: Buffer;
+  readonly embeddings: {
+    readonly provider: 'local' | 'openai';
+    readonly model: string;
+    readonly ollamaBaseUrl: string | undefined;
+    readonly openaiModel: string;
+    readonly openaiBaseUrl: string;
+    readonly openaiApiKey: string | undefined;
+  };
+  readonly maxUploadBytes: number;
+  readonly clamavSocket: string | undefined;
+  readonly documentStorageDir: string;
 }
 
 /** Parse a 32-byte key from base64 or hex; null if neither yields 32 bytes. */
@@ -226,6 +239,25 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     };
   }
 
+  // 10. Document encryption key + embedding provider requirements.
+  let documentEncryptionKey = parseEncryptionKey(e.DOCUMENT_ENCRYPTION_KEY);
+  if (isProduction) {
+    if (!documentEncryptionKey) {
+      issues.push({
+        variable: 'DOCUMENT_ENCRYPTION_KEY',
+        reason: e.DOCUMENT_ENCRYPTION_KEY ? 'must be 32 bytes (hex or base64)' : 'required in production but missing',
+      });
+    }
+    if (e.EMBEDDING_PROVIDER === 'local' && !e.OLLAMA_BASE_URL) {
+      issues.push({ variable: 'OLLAMA_BASE_URL', reason: 'required in production when EMBEDDING_PROVIDER=local' });
+    }
+    if (e.EMBEDDING_PROVIDER === 'openai' && !e.OPENAI_API_KEY) {
+      issues.push({ variable: 'OPENAI_API_KEY', reason: 'required in production when EMBEDDING_PROVIDER=openai' });
+    }
+  } else if (!documentEncryptionKey) {
+    documentEncryptionKey = randomBytes(32); // ephemeral dev key
+  }
+
   if (issues.length > 0) {
     throw new ConfigError(issues);
   }
@@ -253,6 +285,18 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     },
     encryptionKey: encryptionKey as Buffer,
     oidc,
+    documentEncryptionKey: documentEncryptionKey as Buffer,
+    embeddings: {
+      provider: e.EMBEDDING_PROVIDER,
+      model: e.EMBEDDING_MODEL,
+      ollamaBaseUrl: e.OLLAMA_BASE_URL,
+      openaiModel: e.OPENAI_EMBEDDING_MODEL,
+      openaiBaseUrl: e.OPENAI_EMBEDDING_BASE_URL,
+      openaiApiKey: e.OPENAI_API_KEY,
+    },
+    maxUploadBytes: e.MAX_UPLOAD_SIZE_MB * 1024 * 1024,
+    clamavSocket: e.CLAMAV_SOCKET,
+    documentStorageDir: e.DOCUMENT_STORAGE_DIR,
   };
 
   return Object.freeze(config);

@@ -1,4 +1,15 @@
-import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
+import { createCipheriv, createDecipheriv, randomBytes, hkdfSync } from 'node:crypto';
+
+/**
+ * Derive a deterministic, per-tenant 32-byte subkey from a master key using
+ * HKDF-SHA256, with the organization id as salt. Different orgs get
+ * cryptographically independent keys, so a leak of one tenant's derived key
+ * does not expose others, and the master key never encrypts data directly.
+ */
+export function deriveTenantKey(masterKey: Buffer, orgId: string): Buffer {
+  const derived = hkdfSync('sha256', masterKey, Buffer.from(orgId, 'utf8'), Buffer.from('capybara-doc-v1'), 32);
+  return Buffer.from(derived);
+}
 
 /**
  * Authenticated symmetric encryption for secrets at rest (e.g. TOTP secrets),

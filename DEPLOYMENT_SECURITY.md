@@ -70,6 +70,27 @@ migrations (tables + RLS) before the app starts (`depends_on … service_complet
 - Keep the LLM endpoint (Ollama/vLLM) on a private network; the app reaches it
   via server config only.
 
+## Document uploads & virus scanning (RAG)
+
+- **Encryption at rest:** uploaded files and every text chunk are encrypted with
+  AES-256-GCM under a per-tenant key derived (HKDF) from `DOCUMENT_ENCRYPTION_KEY`
+  (a key distinct from `ENCRYPTION_KEY`; required and 32 bytes in production).
+  Files are stored under `DOCUMENT_STORAGE_DIR/{org_id}/{uuid}.enc` — never under
+  the original filename.
+- **MIME allowlist:** only `pdf, docx, xlsx, txt, md, eml` are accepted; anything
+  else is rejected (415). Uploads are size-capped by `MAX_UPLOAD_SIZE_MB` (413).
+- **Virus scanning (ClamAV):** if `CLAMAV_SOCKET` is set, each upload is scanned
+  via the ClamAV daemon (INSTREAM) **before** storage and rejected if infected;
+  the scanner **fails closed** (a connection/protocol error rejects the upload).
+  **If `CLAMAV_SOCKET` is unset, scanning is skipped** and a warning is logged —
+  acceptable for trusted internal use, but **set it for any internet-facing or
+  multi-tenant deployment.** Run `clamd` as a sidecar and mount its socket.
+- **Classification & access:** documents carry a classification
+  (PUBLIC/INTERNAL/CONFIDENTIAL/SECRET); retrieval is gated by the caller's
+  clearance at both the application layer and Postgres RLS. Every access is
+  recorded in an append-only `document_access_log` (queries stored only as a
+  SHA-256 hash).
+
 ## Backups & restore
 
 - **What to back up:** the PostgreSQL database (all tenant data, auth, audit).
