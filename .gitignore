@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Secrets / local env — NEVER commit real secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs/
+
+# Test / coverage artifacts
+coverage/
+.vitest/
+
+# OS / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/
