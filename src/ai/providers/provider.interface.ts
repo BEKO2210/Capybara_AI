@@ -33,8 +33,22 @@ export interface CallOptions {
   timeoutMs?: number;
 }
 
+/** One streamed increment. `done` marks the final chunk. */
+export interface ChatStreamChunk {
+  delta: string;
+  done: boolean;
+  finishReason?: string;
+}
+
 export interface LlmProvider {
   readonly id: string;
   readonly model: string;
   chat(request: ChatRequest, options?: CallOptions): Promise<ChatResponse>;
+  /**
+   * Stream the completion incrementally. Consumers iterate with `for await`;
+   * breaking out (e.g. on client disconnect) runs the generator's cleanup,
+   * which cancels the upstream request — no full-response buffering.
+   */
+  chatStream(request: ChatRequest, options?: CallOptions): AsyncIterable<ChatStreamChunk>;
 }
+

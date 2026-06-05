@@ -10,3 +10,5 @@ export { auditLog } from './auditLog.js';
 export type { AuditEntry, NewAuditEntry } from './auditLog.js';
 export { securityEvents } from './securityEvents.js';
 export type { SecurityEvent, NewSecurityEvent } from './securityEvents.js';
+export { mfaBackupCodes } from './mfaBackupCodes.js';
+export type { MfaBackupCode, NewMfaBackupCode } from './mfaBackupCodes.js';

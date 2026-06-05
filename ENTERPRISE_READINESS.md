@@ -23,11 +23,13 @@ tested today**, and what is deferred to P1/P2. No capability is claimed as
 | Non-root hardened container + healthcheck | ✅ Implemented | `docker/Dockerfile`, `docker/docker-compose*.yml` |
 | CI: typecheck/build/test | ✅ Implemented | `.github/workflows/ci.yml` |
 | Supply chain: lockfile/audit/SBOM/OSV/gitleaks | ✅ Implemented | `.github/workflows/security.yml` |
-| OIDC/SAML SSO | ⚠️ Interface only | `AuthProvider` in `src/auth/provider.ts` |
-| MFA / TOTP | ❌ P1 | — |
-| Streaming + cloud LLM providers | ❌ P1 | interface ready |
-| Encryption at rest (field-level) / KMS | ❌ P2 | rely on DB/disk encryption |
-| Per-token fine-grained scopes / API keys | ❌ P1 | — |
+| OIDC SSO (PKCE) | ✅ Implemented + tested | `src/auth/oidc.provider.ts`, `tests/auth/oidc.test.ts` |
+| SAML SSO | ⚠️ Stub (interface) | `src/auth/saml.provider.ts` (full impl P2) |
+| MFA / TOTP + backup codes | ✅ Implemented + tested | `src/auth/mfa.ts`, `tests/auth/mfa.test.ts` |
+| Streaming (SSE) LLM responses | ✅ Implemented + tested | `src/http/aiStream.ts`, `tests/ai/streaming.test.ts` |
+| Cloud providers (OpenAI-compat, Anthropic) | ✅ Implemented + tested | `src/ai/providers/`, `tests/ai/cloud-providers.test.ts` |
+| Encryption at rest (field-level, AES-256-GCM) | 🟡 Secrets (e.g. TOTP) | `src/lib/crypto.ts`; broader field-level + KMS is P2 |
+| Per-token fine-grained scopes / API keys | ❌ P1/P2 | — |
 | Security-event off-box anchoring | ❌ P1 | chain is local today |
 | Admin console / SCIM provisioning | ❌ P2 | — |
 | Process/microVM isolation for tools | ❌ P2 | capability-scoped in-process today |
@@ -56,10 +58,13 @@ data on production code paths — demo/fixtures live only under `tests/`.
 
 ## Roadmap
 
-- **P1:** OIDC/SAML + MFA; streaming + cloud providers; scoped API tokens;
-  security-event anchoring/log shipping; approval UI + notifications.
-- **P2:** microVM/worker isolation for dangerous tools; field-level encryption +
-  KMS; GDPR erasure workflows; admin console + SCIM; anomaly detection.
+- **P1 (delivered):** OIDC (PKCE) + MFA/TOTP; SSE streaming; cloud providers
+  (OpenAI-compatible + Anthropic); AES-256-GCM secrets at rest.
+- **P1 (remaining):** scoped API tokens; security-event anchoring/log shipping;
+  approval UI + notifications.
+- **P2:** full SAML; microVM/worker isolation for dangerous tools; broader
+  field-level encryption + KMS; GDPR erasure workflows; admin console + SCIM;
+  anomaly detection.
 
 ## Compliance posture
 

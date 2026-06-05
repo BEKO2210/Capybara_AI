@@ -1,11 +1,12 @@
 import { z } from 'zod';
 import { OpenAiCompatibleProvider } from './openaiCompatible.js';
+import { AnthropicProvider } from './anthropic.js';
 import type { LlmProvider } from './provider.interface.js';
 
 /** Schema for a single server-configured provider. baseUrl is server-only. */
 export const llmProviderConfigSchema = z.object({
   id: z.string().min(1),
-  type: z.literal('openai-compatible'),
+  type: z.enum(['openai-compatible', 'anthropic']),
   baseUrl: z.string().url(),
   model: z.string().min(1),
   apiKey: z.string().optional(),
@@ -38,20 +39,20 @@ export class ProviderRegistry {
 
   constructor(configs: readonly LlmProviderConfig[], options: RegistryOptions = {}) {
     for (const c of configs) {
-      // Currently one provider type; the switch keeps the door open for more.
+      const common = {
+        id: c.id,
+        baseUrl: c.baseUrl,
+        model: c.model,
+        ...(c.apiKey ? { apiKey: c.apiKey } : {}),
+        ...(options.requestTimeoutMs ? { defaultTimeoutMs: options.requestTimeoutMs } : {}),
+        ...(options.fetchImpl ? { fetchImpl: options.fetchImpl } : {}),
+      };
       switch (c.type) {
         case 'openai-compatible':
-          this.providers.set(
-            c.id,
-            new OpenAiCompatibleProvider({
-              id: c.id,
-              baseUrl: c.baseUrl,
-              model: c.model,
-              ...(c.apiKey ? { apiKey: c.apiKey } : {}),
-              ...(options.requestTimeoutMs ? { defaultTimeoutMs: options.requestTimeoutMs } : {}),
-              ...(options.fetchImpl ? { fetchImpl: options.fetchImpl } : {}),
-            }),
-          );
+          this.providers.set(c.id, new OpenAiCompatibleProvider(common));
+          break;
+        case 'anthropic':
+          this.providers.set(c.id, new AnthropicProvider(common));
           break;
       }
     }

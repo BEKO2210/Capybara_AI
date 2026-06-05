@@ -30,6 +30,31 @@ export interface Config {
     readonly defaultProvider: string | undefined;
     readonly requestTimeoutMs: number;
   };
+  /** 32-byte key for AES-256-GCM encryption at rest. */
+  readonly encryptionKey: Buffer;
+  /** OIDC settings, present only when all four OIDC_* vars are configured. */
+  readonly oidc:
+    | {
+        readonly issuer: string;
+        readonly clientId: string;
+        readonly clientSecret: string;
+        readonly redirectUri: string;
+      }
+    | undefined;
+}
+
+/** Parse a 32-byte key from base64 or hex; null if neither yields 32 bytes. */
+function parseEncryptionKey(raw: string | undefined): Buffer | null {
+  if (!raw) return null;
+  for (const enc of ['base64', 'hex'] as const) {
+    try {
+      const b = Buffer.from(raw, enc);
+      if (b.length === 32) return b;
+    } catch {
+      // try next encoding
+    }
+  }
+  return null;
 }
 
 /** A single fail-closed configuration problem. Never contains secret values. */
@@ -170,6 +195,37 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     issues.push({ variable: 'LLM_DEFAULT_PROVIDER', reason: 'does not match any configured provider id' });
   }
 
+  // 8. Encryption key (AES-256-GCM). Required+valid in prod; ephemeral in dev.
+  let encryptionKey = parseEncryptionKey(e.ENCRYPTION_KEY);
+  if (isProduction) {
+    if (!encryptionKey) {
+      issues.push({
+        variable: 'ENCRYPTION_KEY',
+        reason: e.ENCRYPTION_KEY ? 'must be 32 bytes (base64 or hex)' : 'required in production but missing',
+      });
+    }
+  } else if (!encryptionKey) {
+    encryptionKey = randomBytes(32); // ephemeral dev key
+  }
+
+  // 9. OIDC — all-or-nothing.
+  const oidcParts = [e.OIDC_ISSUER, e.OIDC_CLIENT_ID, e.OIDC_CLIENT_SECRET, e.OIDC_REDIRECT_URI];
+  const oidcCount = oidcParts.filter((v) => v && v.length > 0).length;
+  let oidc: Config['oidc'];
+  if (oidcCount > 0 && oidcCount < 4) {
+    issues.push({
+      variable: 'OIDC_*',
+      reason: 'OIDC_ISSUER, OIDC_CLIENT_ID, OIDC_CLIENT_SECRET and OIDC_REDIRECT_URI must all be set together',
+    });
+  } else if (oidcCount === 4) {
+    oidc = {
+      issuer: e.OIDC_ISSUER as string,
+      clientId: e.OIDC_CLIENT_ID as string,
+      clientSecret: e.OIDC_CLIENT_SECRET as string,
+      redirectUri: e.OIDC_REDIRECT_URI as string,
+    };
+  }
+
   if (issues.length > 0) {
     throw new ConfigError(issues);
   }
@@ -195,6 +251,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       defaultProvider: e.LLM_DEFAULT_PROVIDER,
       requestTimeoutMs: e.LLM_REQUEST_TIMEOUT_MS,
     },
+    encryptionKey: encryptionKey as Buffer,
+    oidc,
   };
 
   return Object.freeze(config);

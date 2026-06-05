@@ -46,6 +46,16 @@ export const envSchema = z.object({
   LLM_PROVIDERS: z.string().optional(),
   LLM_DEFAULT_PROVIDER: z.string().optional(),
   LLM_REQUEST_TIMEOUT_MS: z.coerce.number().int().positive().default(30_000),
+
+  // 32-byte key (base64 or hex) for AES-256-GCM encryption at rest (e.g. TOTP
+  // secrets). Required in production; ephemeral in dev if unset.
+  ENCRYPTION_KEY: z.string().optional(),
+
+  // OIDC (all-or-nothing). PKCE authorization-code flow; no implicit grant.
+  OIDC_ISSUER: z.string().url().optional(),
+  OIDC_CLIENT_ID: z.string().optional(),
+  OIDC_CLIENT_SECRET: z.string().optional(),
+  OIDC_REDIRECT_URI: z.string().url().optional(),
 });
 
 export type RawEnv = z.infer<typeof envSchema>;
