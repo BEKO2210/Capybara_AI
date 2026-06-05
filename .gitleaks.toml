@@ -1,0 +1,17 @@
+# Gitleaks configuration for Capybara_AI.
+# Extends the default ruleset; allowlists paths that contain only fabricated
+# example/test values (never real credentials) to avoid false positives.
+
+title = "capybara-ai gitleaks"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Test fixtures, vendored libraries, and docs use fabricated example secrets only"
+paths = [
+  '''tests/.*''',                       # test fixtures use fake secrets
+  '''src/admin/static/htmx\.min\.js''', # vendored minified library (high-entropy, no secrets)
+  '''docs/.*\.md''',                    # docs show illustrative example keys
+  '''\.env\.example''',                 # documented placeholders, never real values
+]
