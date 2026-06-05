@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><%= it.title %> — Capybara_AI Admin</title>
+<script src="/admin/static/htmx.min.js" defer></script>
+<style>
+:root{--accent:#2b6cb0;}
+*{box-sizing:border-box}
+body{font-family:system-ui,-apple-system,sans-serif;margin:0;color:#1a202c;background:#f7fafc}
+header{background:#1a202c;color:#fff;padding:12px 20px}
+nav{margin-top:8px;display:flex;flex-wrap:wrap;gap:16px}
+nav a{color:#cbd5e0;text-decoration:none}
+nav a:hover{color:#fff}
+main{max-width:1000px;margin:0 auto;padding:20px}
+h1{font-size:1.4rem}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:8px;border-bottom:1px solid #edf2f7}
+label{display:block;margin:8px 0 4px;font-size:.9rem;color:#4a5568}
+button,input,select{padding:8px;border:1px solid #cbd5e0;border-radius:6px;font:inherit}
+button{background:var(--accent);color:#fff;border:none;cursor:pointer}
+button.danger{background:#c53030}
+.badge{display:inline-block;background:#edf2f7;color:#4a5568;border:1px solid #cbd5e0;border-radius:4px;padding:2px 6px;font-size:12px}
+.badge.ki{background:#fffaf0;border-color:#dd6b20;color:#9c4221}
+</style>
+</head>
+<body>
+<header>
+<strong>Capybara_AI</strong> · Admin-Konsole
+<nav>
+<a href="/admin/dashboard">Dashboard</a>
+<a href="/admin/users">Benutzer</a>
+<a href="/admin/documents">Dokumente</a>
+<a href="/admin/compliance">Compliance</a>
+<a href="/admin/sso">SSO</a>
+<a href="/admin/api-keys">API-Keys</a>
+<a href="/admin/webhooks">Webhooks</a>
+</nav>
+</header>
+<main>

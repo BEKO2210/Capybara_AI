@@ -1,4 +1,5 @@
-import type { FastifyInstance } from 'fastify';
+import { createHash } from 'node:crypto';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
 import helmet from '@fastify/helmet';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
@@ -51,6 +52,14 @@ export async function registerSecurity(app: FastifyInstance, config: Config): Pr
   await app.register(rateLimit, {
     max: config.rateLimit.max,
     timeWindow: config.rateLimit.windowMs,
+    // Per-API-key buckets when an API key is presented; per-IP otherwise.
+    keyGenerator: (req: FastifyRequest) => {
+      const authz = req.headers['authorization'];
+      if (authz && authz.startsWith('Bearer capy_')) {
+        return 'apikey:' + createHash('sha256').update(authz).digest('hex');
+      }
+      return req.ip;
+    },
   });
 
   await app.register(csrf, {

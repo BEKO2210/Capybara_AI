@@ -1,7 +1,11 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { requirePermission } from '../../rbac/guard.js';
+import { clearanceForRole } from '../../rbac/roles.js';
 import type { LlmProvider } from '../../ai/providers/provider.interface.js';
+import type { AppDatabase } from '../../db/client.js';
+import { recordMetering } from '../../admin/metering.js';
+import type { Role } from '../../db/schema/index.js';
 import '../aiResponseEnvelope.js';
 
 const bodySchema = z.object({
@@ -10,9 +14,15 @@ const bodySchema = z.object({
 });
 
 export interface CompletionsDeps {
+  db: AppDatabase;
   resolveProvider: (id: string) => LlmProvider;
   providerId: string;
   rateLimit?: { max: number; timeWindow: number };
+}
+
+/** Cheap heuristic token estimate (≈4 chars/token). */
+function estimateTokens(text: string): number {
+  return Math.ceil(text.length / 4);
 }
 
 /**
@@ -38,6 +48,18 @@ export function registerCompletionsRoute(app: FastifyInstance, deps: Completions
     }
 
     const result = await provider.chat({ messages: [{ role: 'user', content: parsed.data.message }] });
+
+    // Billing-ready metering on every LLM call.
+    const ctx = req.authContext!;
+    await recordMetering(
+      deps.db,
+      { orgId: ctx.orgId, userId: ctx.userId, clearance: clearanceForRole(ctx.role as Role) },
+      {
+        eventType: 'LLM_CALL', model: result.model, provider: id,
+        metadata: { tokensIn: estimateTokens(parsed.data.message), tokensOut: estimateTokens(result.content) },
+      },
+    );
+
     return reply.aiEnvelope({ content: result.content, model: result.model }, { model: result.model, provider: id });
   });
 }

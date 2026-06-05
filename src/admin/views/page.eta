@@ -1,0 +1,6 @@
+<%~ include("_head", { title: it.title }) %>
+<h1><%= it.title %></h1>
+<div class="card">
+<%~ it.body %>
+</div>
+<%~ include("_foot") %>

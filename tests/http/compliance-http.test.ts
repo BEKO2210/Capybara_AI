@@ -67,6 +67,7 @@ beforeAll(async () => {
       registerAiEnvelope(instance, { db: t.app.db });
       registerComplianceRoutes(instance, { db: t.app.db });
       registerCompletionsRoute(instance, {
+        db: t.app.db,
         resolveProvider: (id) => { if (id === 'test-llm') return fakeProvider; throw new Error('unknown'); },
         providerId: 'test-llm',
       });

@@ -1,0 +1,22 @@
+<%~ include("_head", { title: "Benutzer" }) %>
+<h1>Benutzer</h1>
+<div class="card">
+<h3>Benutzer einladen</h3>
+<form hx-post="/admin/users/invite" hx-swap="none">
+<input type="hidden" name="_csrf" value="<%= it.csrf %>">
+<label>E-Mail</label><input name="email" type="email" placeholder="person@firma.de" required>
+<label>Rolle</label><select name="role"><option value="member">member</option><option value="admin">admin</option><option value="viewer">viewer</option></select>
+<p><button type="submit">Einladen</button></p>
+</form>
+</div>
+<div class="card">
+<table>
+<thead><tr><th>E-Mail</th><th>Rolle</th><th>MFA</th><th>Status</th></tr></thead>
+<tbody>
+<% it.users.forEach(function(u){ %>
+<tr><td><a href="/admin/users/<%= u.id %>"><%= u.email %></a></td><td><%= u.role %></td><td><%= u.mfaEnrolled ? "✓" : "—" %></td><td><%= u.status %></td></tr>
+<% }) %>
+</tbody>
+</table>
+</div>
+<%~ include("_foot") %>

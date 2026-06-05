@@ -23,6 +23,23 @@ implementing module and, where applicable, the test.
 | **Logging & error handling** (cross-cutting) | Tamper-evident security logging; no sensitive data in logs | ✅ | Hash-chained `security_events` (append-only, `src/audit/`); Pino redaction of auth/cookie headers (`src/server.ts`). `tests/audit/chain.test.ts` |
 | **SSRF defense** (API/comms) | Block internal/metadata targets | ✅ | Server-only LLM endpoints + `src/net/ssrfGuard.ts`. `tests/ai/provider.test.ts`, `tests/ai/ssrf.test.ts` |
 
+## Enterprise integrations (Phase C)
+
+- **API keys** (`src/integrations/apiKeys.ts`, `src/http/apiKeyAuth.ts`): random
+  keys, only SHA-256 hashes stored, explicit scopes, expiry/revocation, **per-key
+  rate limiting**, and every request audited. (ASVS V6/V7/V8.)
+- **Outbound webhooks** (`src/integrations/webhooks.ts`): HMAC-SHA256 signed
+  payloads, retries + dead-letter, encrypted secrets at rest, delivery log.
+- **Admin console** REST + htmx UI (`src/http/routes/admin.ts`, `admin-ui.ts`):
+  admin+ gated, CSRF-protected forms, **no external CDN** (bundled htmx), stats
+  contain aggregates only (no PII).
+- **GDPR data export** (`src/admin/export.ts`): encrypted ZIP, 1-hour signed
+  download token, artifact deleted after download. (Art. 20.)
+- **Production SSO/OIDC** (`src/admin/sso.ts`): per-tenant config (client secret
+  AES-256-GCM encrypted), discovery validation, auto-provisioning. (ASVS V10.)
+- **Metering** (`src/admin/metering.ts`): append-only (INSERT/SELECT grants only).
+- **OpenAPI** served only when `ENABLE_API_DOCS=true` (off by default).
+
 ## Governance (EU AI Act, beyond ASVS)
 
 - **KI-Inventar (Art. 4):** org-scoped AI usage registry, auto-populated, PDF

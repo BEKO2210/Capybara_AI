@@ -24,3 +24,11 @@ export { aiInventoryEntries, RISK_CLASSES } from './aiInventory.js';
 export type { AiInventoryEntry, NewAiInventoryEntry, RiskClass } from './aiInventory.js';
 export { oversightRequests, RISK_LEVELS, OVERSIGHT_STATUSES, RISK_LEVEL_RANK } from './oversightRequests.js';
 export type { OversightRequest, NewOversightRequest, RiskLevel, OversightStatus } from './oversightRequests.js';
+export {
+  meteringEvents, exportJobs, oidcConfigs, apiKeys, webhookConfigs, webhookDeliveries,
+  METERING_EVENT_TYPES, API_KEY_SCOPES,
+} from './enterprise.js';
+export type {
+  MeteringEvent, ExportJob, OidcConfig, ApiKey, WebhookConfig, WebhookDelivery,
+  MeteringEventType, ApiKeyScope,
+} from './enterprise.js';

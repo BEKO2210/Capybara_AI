@@ -1,0 +1,11 @@
+<%~ include("_head", { title: "Dashboard" }) %>
+<h1>Dashboard</h1>
+<div class="grid">
+<div class="card"><h3>Benutzer</h3><p style="font-size:1.6rem"><%= it.stats.users.total %></p><small><%= it.stats.users.active %> aktiv · <%= it.stats.users.invited %> eingeladen</small></div>
+<div class="card"><h3>Dokumente</h3><p style="font-size:1.6rem"><%= it.stats.documents.total %></p></div>
+<div class="card"><h3>KI-Abfragen (30 Tage)</h3><p style="font-size:1.6rem"><%= it.stats.queries.total %></p></div>
+<div class="card"><h3>Oversight offen</h3><p style="font-size:1.6rem"><%= it.stats.compliance.oversightPending %></p></div>
+<div class="card"><h3>LLM-Aufrufe</h3><p style="font-size:1.6rem"><%= it.stats.llmCalls.total %></p></div>
+<div class="card"><h3>DSGVO-Löschungen</h3><p style="font-size:1.6rem"><%= it.stats.compliance.gdprErasures %></p></div>
+</div>
+<%~ include("_foot") %>
