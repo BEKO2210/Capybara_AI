@@ -9,11 +9,11 @@
     "node": ">=22 <23"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.build.json && cp -r src/db/sql dist/db/sql",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "db:migrate": "tsx src/db/migrate.ts"
+    "db:migrate": "tsx src/db/migrate-cli.ts"
   },
   "dependencies": {
     "@fastify/cookie": "11.0.2",

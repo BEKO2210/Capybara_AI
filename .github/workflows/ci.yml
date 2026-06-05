@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Least-privilege default token.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    name: typecheck · build · test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      # Reproducible install from the committed lockfile.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck (strict)
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+
+      # The DB/auth/audit suites provision a real PostgreSQL 16 via
+      # Testcontainers. ubuntu-latest ships a working Docker daemon, so no
+      # separate service container is required — the tests really exercise
+      # Postgres + Row-Level Security, not mocks.
+      - name: Test
+        run: npm test

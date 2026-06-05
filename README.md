@@ -40,9 +40,20 @@ Eight foundation pillars, each with passing integration tests proving they
    timeouts; **human approval required for dangerous actions**; output
    redaction; untrusted-context wrapping for prompt-injection defense.
 
-**Still pending for P0:** Docker hardening, CI + supply-chain scanning (SBOM,
-osv-scan, gitleaks), and the security-document suite (SECURITY_ARCHITECTURE,
-THREAT_MODEL, ASVS/LLM-Top-10 mappings, etc.).
+**Packaging & docs (P0 complete):**
+- **Docker** — multi-stage, non-root (uid 10001), healthchecked image
+  (`docker/Dockerfile`); dev + prod compose with no default credentials,
+  loopback binds, `read_only`/`cap_drop`/`no-new-privileges` (`docker/`).
+- **CI** — `.github/workflows/ci.yml` (typecheck + build + real Testcontainers
+  tests) and `security.yml` (npm audit, OSV, gitleaks, CycloneDX SBOM; weekly).
+- **Security docs** — `SECURITY.md`, `SECURITY_ARCHITECTURE.md`,
+  `THREAT_MODEL.md`, `ENTERPRISE_READINESS.md`, `PRIVACY_AND_GDPR.md`,
+  `AI_SECURITY_MODEL.md`, `SUPPLY_CHAIN_SECURITY.md`, `DEPLOYMENT_SECURITY.md`,
+  `INCIDENT_RESPONSE.md`, and `docs/security/{ASVS_MAPPING,LLM_TOP_10_MAPPING,RISK_REGISTER}.md`.
+
+**Deferred to P1/P2:** OIDC/SAML + MFA, streaming + cloud LLM providers,
+field-level encryption/KMS, off-box audit anchoring, and process/microVM
+isolation for tools. See [`ENTERPRISE_READINESS.md`](./ENTERPRISE_READINESS.md).
 
 ## Tech stack
 
