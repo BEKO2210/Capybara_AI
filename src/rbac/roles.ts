@@ -30,6 +30,13 @@ export const PERMISSIONS = [
   'document:hold',
   'document:release_hold',
   'gdpr:erase',
+  // EU AI Act compliance
+  'compliance:read',
+  'compliance:write',
+  'compliance:delete',
+  'compliance:report',
+  'oversight:read',
+  'oversight:decide',
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
@@ -42,7 +49,14 @@ export const ROLE_RANK: Readonly<Record<Role, number>> = {
   owner: 3,
 };
 
-const viewer: Permission[] = ['org:read', 'member:read', 'content:read', 'document:read', 'document:query'];
+const viewer: Permission[] = [
+  'org:read',
+  'member:read',
+  'content:read',
+  'document:read',
+  'document:query',
+  'compliance:read',
+];
 
 const member: Permission[] = [
   ...viewer,
@@ -63,9 +77,19 @@ const admin: Permission[] = [
   'ai:approve_tool',
   'audit:read',
   'document:hold',
+  'compliance:write',
+  'compliance:report',
+  'oversight:read',
+  'oversight:decide',
 ];
 
-const owner: Permission[] = [...admin, 'org:delete', 'document:release_hold', 'gdpr:erase'];
+const owner: Permission[] = [
+  ...admin,
+  'org:delete',
+  'document:release_hold',
+  'gdpr:erase',
+  'compliance:delete',
+];
 
 /**
  * A user's maximum document classification clearance, by role:

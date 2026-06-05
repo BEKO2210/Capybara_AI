@@ -6,6 +6,7 @@ import type { ApprovalGate } from './approval.js';
 import type { ToolRegistry } from './registry.js';
 import { UnknownToolError } from './registry.js';
 import type { ToolContext, ToolResult, ToolScopes } from './tool.types.js';
+import { requiresOversight, type OversightGate } from '../../compliance/oversight.js';
 
 export type ToolDecision = 'allowed' | 'denied' | 'pending_approval';
 
@@ -16,6 +17,8 @@ export interface ToolInvocation {
   result?: ToolResult;
   /** Machine-readable reason for denial/pending. */
   reason?: string;
+  /** Oversight request id when decision === 'pending_approval' (risk >= HIGH). */
+  requestId?: string;
   /** Redacted copy of the arguments, safe to log/persist. */
   redactedArgs: unknown;
 }
@@ -28,6 +31,8 @@ export interface ExecuteOptions {
   redactor?: (value: unknown) => unknown;
   /** Injectable fetch for network-scoped tools (tests). */
   fetchImpl?: typeof fetch;
+  /** DB-backed human-oversight gate (required for HIGH/CRITICAL-risk tools). */
+  oversight?: OversightGate;
 }
 
 class ToolTimeoutError extends Error {
@@ -115,6 +120,26 @@ export async function executeTool(
     }
   }
 
+  // 3b. EU AI Act Art. 14 — DB-backed human oversight for HIGH/CRITICAL tools.
+  let oversightRequestId: string | undefined;
+  if (def.riskLevel && requiresOversight(def.riskLevel)) {
+    if (!options.oversight) {
+      // Fail closed: a high-risk tool cannot run without an oversight gate.
+      return { tool: def.name, decision: 'denied', reason: 'oversight_unavailable', redactedArgs };
+    }
+    const decision = await options.oversight.check(def.name, parsed.data, def.riskLevel);
+    if (!decision.approved) {
+      return {
+        tool: def.name,
+        decision: 'pending_approval',
+        reason: 'human_oversight_required',
+        requestId: decision.requestId,
+        redactedArgs,
+      };
+    }
+    oversightRequestId = decision.requestId;
+  }
+
   // 4 + 5. Scoped capabilities + hard timeout.
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), def.timeoutMs);
@@ -126,6 +151,9 @@ export async function executeTool(
 
   try {
     const result = await Promise.race([def.handler(parsed.data, ctx), abortRejection(controller.signal)]);
+    if (oversightRequestId && options.oversight?.recordOutcome) {
+      await options.oversight.recordOutcome(oversightRequestId, `executed: ok=${result.ok}`);
+    }
     return { tool: def.name, decision: 'allowed', result, redactedArgs };
   } catch (e) {
     const error = e instanceof ToolTimeoutError ? 'timeout' : errorMessage(e);

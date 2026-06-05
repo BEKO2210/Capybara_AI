@@ -92,6 +92,33 @@ PEM private-key blocks. Tool-invocation records store **redacted** arguments.
 Full mapping with file references:
 [`docs/security/LLM_TOP_10_MAPPING.md`](./docs/security/LLM_TOP_10_MAPPING.md).
 
+## Human oversight (EU AI Act Art. 14)
+
+Beyond the in-memory `dangerous`-tool approval, tools declare an Art. 14
+`riskLevel`. Tools at **HIGH or CRITICAL** require a DB-backed, auditable
+human-oversight approval before execution (`src/compliance/oversight.ts`,
+`oversight_requests` table):
+
+- The sandbox checks for an unconsumed **APPROVED** request matching the exact
+  tool + args hash. If none exists it creates a **PENDING** request and returns
+  `decision: 'pending_approval'` with a `requestId` — the handler never runs.
+- Status is **forward-only** (PENDING → APPROVED/REJECTED/EXPIRED), enforced by
+  a Postgres trigger; sensitive columns are immutable; the app role cannot
+  DELETE. Tool args are stored AES-256-GCM-encrypted with a SHA-256 hash.
+- An admin approves/rejects via `/api/compliance/oversight/:id/{approve,reject}`;
+  each decision is written to the **tamper-evident, hash-chained security log**.
+- Approvals are **single-use** (consumed by recording the execution outcome) and
+  PENDING requests **auto-expire** after 24h (then block execution, fail-closed).
+
+## Transparency (EU AI Act Art. 50)
+
+Every AI response carries an `ai_meta` envelope (`src/http/aiResponseEnvelope.ts`):
+`ai_generated: true`, model/provider, timestamp, RAG sources, the linked
+**KI-Inventar** entry id, human-oversight status, and a compliance block
+(`eu_ai_act: true`, `risk_class`, `transparency_label: "KI-generierter Inhalt"`).
+The KI-Inventar (Art. 4) is auto-populated on first model use with safe defaults
+(risk class LIMITED, human oversight required) and is admin-editable.
+
 ## Retrieval-Augmented Generation (RAG) pipeline
 
 The document-intelligence feature (`src/documents/`, `src/ai/embeddings/`) adds a
