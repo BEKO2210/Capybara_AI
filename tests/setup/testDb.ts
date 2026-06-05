@@ -22,7 +22,11 @@ export interface TestDb {
 }
 
 export async function startTestDb(): Promise<TestDb> {
-  const container = await new PostgreSqlContainer('postgres:16-alpine').start();
+  // Postgres 16 + pgvector. Pulls pgvector/pgvector:pg16 when available; in
+  // restricted environments a locally-built `capy-pgvector:16` (postgres:16-alpine
+  // + pgvector from source) can be supplied via PGVECTOR_TEST_IMAGE.
+  const image = process.env['PGVECTOR_TEST_IMAGE'] ?? 'pgvector/pgvector:pg16';
+  const container = await new PostgreSqlContainer(image).start();
   const adminUrl = container.getConnectionUri();
 
   const appPassword = randomBytes(18).toString('base64url');

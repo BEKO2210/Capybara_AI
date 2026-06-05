@@ -17,6 +17,8 @@ function prodEnv(overrides: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
     CORS_ALLOWED_ORIGINS: 'https://app.acme-corp.io',
     APP_BASE_URL: 'https://app.acme-corp.io',
     ENCRYPTION_KEY: STRONG_ENC_KEY,
+    DOCUMENT_ENCRYPTION_KEY: Buffer.alloc(32, 9).toString('hex'),
+    OLLAMA_BASE_URL: 'http://ollama.internal:11434',
     ...overrides,
   };
 }
@@ -91,6 +93,16 @@ describe('config — fail-closed startup validation', () => {
     expect(missing.some((i) => i.variable === 'ENCRYPTION_KEY')).toBe(true);
     const tooShort = issuesOf(prodEnv({ ENCRYPTION_KEY: Buffer.alloc(16, 1).toString('base64') }));
     expect(tooShort.some((i) => i.variable === 'ENCRYPTION_KEY' && /32 bytes/.test(i.reason))).toBe(true);
+  });
+
+  it('REFUSES a missing DOCUMENT_ENCRYPTION_KEY in production', () => {
+    const issues = issuesOf(prodEnv({ DOCUMENT_ENCRYPTION_KEY: undefined }));
+    expect(issues.some((i) => i.variable === 'DOCUMENT_ENCRYPTION_KEY')).toBe(true);
+  });
+
+  it('REFUSES local embeddings without OLLAMA_BASE_URL in production', () => {
+    const issues = issuesOf(prodEnv({ EMBEDDING_PROVIDER: 'local', OLLAMA_BASE_URL: undefined }));
+    expect(issues.some((i) => i.variable === 'OLLAMA_BASE_URL')).toBe(true);
   });
 
   it('starts in production when all secrets are present and strong', () => {

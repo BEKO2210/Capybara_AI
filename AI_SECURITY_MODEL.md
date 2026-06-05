@@ -92,6 +92,30 @@ PEM private-key blocks. Tool-invocation records store **redacted** arguments.
 Full mapping with file references:
 [`docs/security/LLM_TOP_10_MAPPING.md`](./docs/security/LLM_TOP_10_MAPPING.md).
 
+## Retrieval-Augmented Generation (RAG) pipeline
+
+The document-intelligence feature (`src/documents/`, `src/ai/embeddings/`) adds a
+retrieval pipeline with its own controls:
+
+- **Ingestion is least-trust:** MIME allowlist (`pdf/docx/xlsx/txt/md/eml`),
+  size cap, optional fail-closed ClamAV scan, then the original file is stored
+  **encrypted** (AES-256-GCM, per-tenant HKDF subkey) under a random UUID name.
+- **Encryption at rest:** every chunk's text is encrypted with the per-tenant
+  key; embeddings are stored in pgvector. Nothing sensitive is plaintext at rest.
+- **Server-only embeddings:** the embedding endpoint (Ollama/OpenAI) comes from
+  config; callers cannot supply a URL (same SSRF rule as chat providers).
+- **ACL-enforced retrieval (two independent gates):** vector search filters by
+  the caller's classification clearance at the application layer **and** under
+  Postgres RLS (FORCE RLS on `documents` and `document_chunks`, app role is
+  NOBYPASSRLS). Tenant isolation + classification both must fail to leak.
+- **No hallucinated sources:** on empty retrieval the RAG endpoint returns an
+  explicit "Keine relevanten Dokumente gefunden" and never calls the model.
+- **Transparency (EU AI Act):** every RAG response carries `ai_generated: true`,
+  the `model` used, the retrieved `sources`, and a timestamp.
+- **Privacy:** query text is logged only as a SHA-256 hash
+  (`document_access_log`, append-only); chat turns are stored encrypted. GDPR
+  erasure removes documents/chunks/messages and anonymizes the access log.
+
 ## Known limitation
 
 In-process tools are **trusted code** constrained by capability scopes — strong

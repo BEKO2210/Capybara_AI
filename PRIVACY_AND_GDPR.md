@@ -16,9 +16,15 @@ records of processing, DPAs, and (where required) a DPIA.
 | Audit entries (actor, action, target) | Security log | `audit_log` | Legal obligation / legitimate interest | Operator-defined |
 | Security events (hash-chained) | Security log | `security_events` | Legitimate interest (integrity) | Operator-defined |
 | Prompt/tool content | Varies (may contain PII) | transient; not persisted by P0 core | Depends on use | Not stored by core |
+| Uploaded documents (file + metadata) | Varies (may contain PII) | `documents` (metadata) + encrypted file on disk | Contract / legitimate interest | Operator-defined / `retention_date`; `legal_hold` blocks deletion |
+| Document chunks + embeddings | Varies (derived from documents) | `document_chunks` (content AES-256-GCM encrypted) | As above | Tied to parent document |
+| RAG chat messages | Varies (may contain PII) | `messages` (content AES-256-GCM encrypted) | Contract | Operator-defined |
+| Document access log | Access metadata; query **hash** only | `document_access_log` (append-only) | Legitimate interest (security) | Operator-defined |
 
-The P0 core does not persist chat/prompt content; if you add features that do,
-extend this map and the retention policy accordingly.
+Document/chunk/message content is **encrypted at rest** with a per-tenant key
+(HKDF from `DOCUMENT_ENCRYPTION_KEY`). Query text is never stored — only its
+SHA-256 hash. Classification (PUBLIC/INTERNAL/CONFIDENTIAL/SECRET) gates access
+by clearance at the app layer and Postgres RLS.
 
 ## Privacy-by-design measures (implemented)
 
@@ -43,12 +49,16 @@ extend this map and the retention policy accordingly.
   `memberships`; export tenant rows scoped via `withTenant`.
 - **Rectification:** update the `users`/membership records through authorized
   endpoints.
-- **Erasure ("right to be forgotten"):** delete the `users` row;
-  `ON DELETE CASCADE` removes `memberships` and `sessions`. **Caveat:** the
-  tamper-evident `security_events` log is append-only by design — do not delete
-  rows (it would break the chain). Records there should reference user **ids**,
-  not raw PII; treat the security log retention separately and document the
-  legitimate-interest basis. A first-class, audited erasure workflow is **P2**.
+- **Erasure ("right to be forgotten"):** a first-class, audited endpoint exists —
+  `DELETE /api/admin/users/:id/gdpr-erasure` (owner-only; requires the
+  `X-Confirm-Erasure: permanent` header). In a single transaction it
+  soft-deletes the user's documents, hard-deletes their chunks+embeddings and
+  messages, anonymizes their `document_access_log` entries (`user_id → NULL` via
+  a vetted SECURITY DEFINER function, since the log is otherwise append-only),
+  deletes the account (cascading memberships/sessions), and records an audit
+  event. **Caveat:** the tamper-evident `security_events` log remains append-only
+  by design and references user **ids**, not raw PII — document its
+  legitimate-interest retention separately.
 - **Restriction / objection:** set `users.status` to a non-`active` value to
   block authentication while preserving records.
 

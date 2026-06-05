@@ -51,3 +51,28 @@ export function withTenantAndIdentity<T>(
     return fn(tx);
   });
 }
+
+export interface TenantContext {
+  orgId: string;
+  /** Clearance level (0=PUBLIC … 3=SECRET) used by document/chunk RLS. */
+  clearance: number;
+  userId: string;
+}
+
+/**
+ * Run `fn` with the full document-RAG context: tenant, identity, and
+ * classification clearance. The RLS policies on documents/chunks read
+ * `app.current_clearance`; when unset they fail closed (deny).
+ */
+export function withTenantContext<T>(
+  db: AppDatabase,
+  ctx: TenantContext,
+  fn: (tx: Tx) => Promise<T>,
+): Promise<T> {
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT set_config('app.current_org', ${ctx.orgId}, true)`);
+    await tx.execute(sql`SELECT set_config('app.current_user_id', ${ctx.userId}, true)`);
+    await tx.execute(sql`SELECT set_config('app.current_clearance', ${String(ctx.clearance)}, true)`);
+    return fn(tx);
+  });
+}

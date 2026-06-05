@@ -22,6 +22,14 @@ export const PERMISSIONS = [
   'ai:invoke',
   'ai:approve_tool',
   'audit:read',
+  // Document intelligence (RAG)
+  'document:read',
+  'document:query',
+  'document:upload',
+  'document:delete',
+  'document:hold',
+  'document:release_hold',
+  'gdpr:erase',
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
@@ -34,9 +42,16 @@ export const ROLE_RANK: Readonly<Record<Role, number>> = {
   owner: 3,
 };
 
-const viewer: Permission[] = ['org:read', 'member:read', 'content:read'];
+const viewer: Permission[] = ['org:read', 'member:read', 'content:read', 'document:read', 'document:query'];
 
-const member: Permission[] = [...viewer, 'content:create', 'content:update', 'ai:invoke'];
+const member: Permission[] = [
+  ...viewer,
+  'content:create',
+  'content:update',
+  'ai:invoke',
+  'document:upload',
+  'document:delete',
+];
 
 const admin: Permission[] = [
   ...member,
@@ -47,9 +62,18 @@ const admin: Permission[] = [
   'content:delete',
   'ai:approve_tool',
   'audit:read',
+  'document:hold',
 ];
 
-const owner: Permission[] = [...admin, 'org:delete'];
+const owner: Permission[] = [...admin, 'org:delete', 'document:release_hold', 'gdpr:erase'];
+
+/**
+ * A user's maximum document classification clearance, by role:
+ *   viewer→PUBLIC(0), member→INTERNAL(1), admin→CONFIDENTIAL(2), owner→SECRET(3).
+ */
+export function clearanceForRole(role: Role): number {
+  return ROLE_RANK[role];
+}
 
 /** Frozen capability matrix: role -> the exact permissions it holds. */
 export const ROLE_PERMISSIONS: Readonly<Record<Role, ReadonlySet<Permission>>> = Object.freeze({
