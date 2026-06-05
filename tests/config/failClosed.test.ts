@@ -5,6 +5,9 @@ import { loadConfig, ConfigError, type ConfigIssue } from '../../src/config/inde
 const STRONG_COOKIE = 'Zk7Q2pXwL4mN8vR1tB6yH3sC0gJ-aE_uIoPqW5n';
 const STRONG_SESSION = 'Hb9Fz2Lm6Qx4Rv8Tn1Yc3Sd0Gj7Aw5Pk-Ue_IoLr';
 
+// 32 bytes, base64 — valid AES-256 key for the ENCRYPTION_KEY requirement.
+const STRONG_ENC_KEY = Buffer.alloc(32, 7).toString('base64');
+
 function prodEnv(overrides: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
   return {
     APP_ENV: 'production',
@@ -13,6 +16,7 @@ function prodEnv(overrides: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
     SESSION_SECRET: STRONG_SESSION,
     CORS_ALLOWED_ORIGINS: 'https://app.acme-corp.io',
     APP_BASE_URL: 'https://app.acme-corp.io',
+    ENCRYPTION_KEY: STRONG_ENC_KEY,
     ...overrides,
   };
 }
@@ -80,6 +84,13 @@ describe('config — fail-closed startup validation', () => {
       prodEnv({ DATABASE_URL: 'postgresql://capyapp:Hb9Fz2Lm6Qx4Rv8@db.internal:5432/capy' }),
     );
     expect(issues.some((i) => i.variable === 'DATABASE_URL' && /TLS/.test(i.reason))).toBe(true);
+  });
+
+  it('REFUSES a missing or wrong-length ENCRYPTION_KEY in production', () => {
+    const missing = issuesOf(prodEnv({ ENCRYPTION_KEY: undefined }));
+    expect(missing.some((i) => i.variable === 'ENCRYPTION_KEY')).toBe(true);
+    const tooShort = issuesOf(prodEnv({ ENCRYPTION_KEY: Buffer.alloc(16, 1).toString('base64') }));
+    expect(tooShort.some((i) => i.variable === 'ENCRYPTION_KEY' && /32 bytes/.test(i.reason))).toBe(true);
   });
 
   it('starts in production when all secrets are present and strong', () => {

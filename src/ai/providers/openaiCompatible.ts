@@ -2,8 +2,10 @@ import type {
   CallOptions,
   ChatRequest,
   ChatResponse,
+  ChatStreamChunk,
   LlmProvider,
 } from './provider.interface.js';
+import { iterateSse } from './sseParse.js';
 
 /**
  * Provider for any OpenAI-compatible chat endpoint (Ollama, vLLM, llama.cpp's
@@ -76,6 +78,58 @@ export class OpenAiCompatibleProvider implements LlmProvider {
         model: data.model ?? this.model,
         ...(choice?.finish_reason ? { finishReason: choice.finish_reason } : {}),
       };
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  async *chatStream(
+    request: ChatRequest,
+    options: CallOptions = {},
+  ): AsyncGenerator<ChatStreamChunk> {
+    const url = `${this.baseUrl}/v1/chat/completions`;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), options.timeoutMs ?? this.defaultTimeoutMs);
+
+    const headers: Record<string, string> = { 'content-type': 'application/json' };
+    if (this.apiKey) headers['authorization'] = `Bearer ${this.apiKey}`;
+
+    try {
+      const res = await this.fetchImpl(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          model: request.model ?? this.model,
+          messages: request.messages,
+          temperature: request.temperature,
+          max_tokens: request.maxTokens,
+          stream: true,
+        }),
+        signal: options.signal ?? controller.signal,
+      });
+      if (!res.ok) throw new Error(`provider "${this.id}" returned HTTP ${res.status}`);
+      if (!res.body) throw new Error(`provider "${this.id}" returned no stream body`);
+
+      for await (const evt of iterateSse(res.body)) {
+        if (evt.data === '[DONE]') {
+          yield { delta: '', done: true };
+          return;
+        }
+        let json: OpenAiChatCompletion & { choices?: Array<{ delta?: { content?: string }; finish_reason?: string }> };
+        try {
+          json = JSON.parse(evt.data);
+        } catch {
+          continue;
+        }
+        const choice = json.choices?.[0];
+        const delta = choice?.delta?.content ?? '';
+        if (delta) yield { delta, done: false };
+        if (choice?.finish_reason) {
+          yield { delta: '', done: true, finishReason: choice.finish_reason };
+          return;
+        }
+      }
+      yield { delta: '', done: true };
     } finally {
       clearTimeout(timer);
     }

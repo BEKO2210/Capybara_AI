@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, timestamp, boolean, bigint } from 'drizzle-orm/pg-core';
 
 /**
  * Global identity. Users are NOT tenant-scoped: a single human identity may
@@ -14,6 +14,11 @@ export const users = pgTable('users', {
   passwordHash: text('password_hash').notNull(),
   status: text('status').notNull().default('active'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  // MFA (TOTP). Secret is AES-256-GCM encrypted at rest; enabled only after the
+  // first code is verified. mfaLastStep blocks same-window replay.
+  mfaEnabled: boolean('mfa_enabled').notNull().default(false),
+  mfaSecret: text('mfa_secret'),
+  mfaLastStep: bigint('mfa_last_step', { mode: 'number' }),
 });
 
 export type User = typeof users.$inferSelect;

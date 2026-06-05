@@ -51,9 +51,14 @@ Eight foundation pillars, each with passing integration tests proving they
   `AI_SECURITY_MODEL.md`, `SUPPLY_CHAIN_SECURITY.md`, `DEPLOYMENT_SECURITY.md`,
   `INCIDENT_RESPONSE.md`, and `docs/security/{ASVS_MAPPING,LLM_TOP_10_MAPPING,RISK_REGISTER}.md`.
 
-**Deferred to P1/P2:** OIDC/SAML + MFA, streaming + cloud LLM providers,
-field-level encryption/KMS, off-box audit anchoring, and process/microVM
-isolation for tools. See [`ENTERPRISE_READINESS.md`](./ENTERPRISE_READINESS.md).
+**P1 (delivered):** OIDC SSO (PKCE) + SAML stub (`src/auth/oidc.provider.ts`,
+`src/auth/saml.provider.ts`); MFA/TOTP with backup codes (`src/auth/mfa.ts`);
+SSE streaming (`src/http/aiStream.ts`); cloud providers — OpenAI-compatible +
+Anthropic (`src/ai/providers/`); AES-256-GCM secrets at rest (`src/lib/crypto.ts`).
+
+**Deferred to P1-remaining/P2:** full SAML, scoped API tokens, off-box audit
+anchoring, broader field-level encryption/KMS, and process/microVM isolation for
+tools. See [`ENTERPRISE_READINESS.md`](./ENTERPRISE_READINESS.md).
 
 ## Tech stack
 
