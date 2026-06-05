@@ -1,11 +1,126 @@
-<%~ include("_head", { title: "Dashboard" }) %>
-<h1>Dashboard</h1>
-<div class="grid">
-<div class="card"><h3>Benutzer</h3><p style="font-size:1.6rem"><%= it.stats.users.total %></p><small><%= it.stats.users.active %> aktiv · <%= it.stats.users.invited %> eingeladen</small></div>
-<div class="card"><h3>Dokumente</h3><p style="font-size:1.6rem"><%= it.stats.documents.total %></p></div>
-<div class="card"><h3>KI-Abfragen (30 Tage)</h3><p style="font-size:1.6rem"><%= it.stats.queries.total %></p></div>
-<div class="card"><h3>Oversight offen</h3><p style="font-size:1.6rem"><%= it.stats.compliance.oversightPending %></p></div>
-<div class="card"><h3>LLM-Aufrufe</h3><p style="font-size:1.6rem"><%= it.stats.llmCalls.total %></p></div>
-<div class="card"><h3>DSGVO-Löschungen</h3><p style="font-size:1.6rem"><%= it.stats.compliance.gdprErasures %></p></div>
+<%~ include("_head", { title: "Dashboard", active: "dashboard" }) %>
+<%
+  var s = it.stats;
+  var fmt = function (n) { return Number(n).toLocaleString('de-DE'); };
+  var mb = function (b) { return (Number(b) / 1048576).toFixed(1) + ' MB'; };
+  var bucket = function (pct) { return Math.max(0, Math.min(100, Math.round(pct / 5) * 5)); };
+
+  // Queries sparkline from real byDay series.
+  var byDay = s.queries.byDay || [];
+  var maxQ = byDay.reduce(function (m, d) { return Math.max(m, d.count); }, 0) || 1;
+  var n = byDay.length;
+  var pts = byDay.map(function (d, i) {
+    var x = n > 1 ? (i / (n - 1)) * 100 : 50;
+    var y = 30 - (d.count / maxQ) * 24 - 3;
+    return x.toFixed(1) + ',' + y.toFixed(1);
+  });
+  var linePath = pts.length ? 'M' + pts.join(' L') : '';
+  var areaPath = pts.length ? 'M0,30 L' + pts.join(' L') + ' L100,30 Z' : '';
+
+  // User composition donut as an SVG (stroke-dasharray; CSP-safe, no inline style).
+  var u = s.users;
+  var tot = Math.max(u.total, 1);
+  var C = 100; // use circumference 100 so segment length == percentage
+  var segActive = (u.active / tot) * C;
+  var segInvited = (u.invited / tot) * C;
+  var segDeact = (u.deactivated / tot) * C;
+  var offInvited = -segActive;
+  var offDeact = -(segActive + segInvited);
+
+  // Documents by classification (CSS bars, bucketed widths).
+  var bc = s.documents.byClassification || {};
+  var ck = Object.keys(bc);
+  var maxC = ck.reduce(function (m, k) { return Math.max(m, bc[k]); }, 0) || 1;
+
+  var pendOk = s.compliance.oversightPending === 0;
+%>
+
+<div class="grid stats">
+  <div class="card hover stat">
+    <div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> Benutzer</div>
+    <div class="value"><%= fmt(u.total) %></div>
+    <div class="sub"><span class="dot ok"></span> <%= fmt(u.active) %> aktiv · <%= fmt(u.invited) %> eingeladen</div>
+  </div>
+  <div class="card hover stat">
+    <div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg> Dokumente</div>
+    <div class="value"><%= fmt(s.documents.total) %></div>
+    <div class="sub"><%= mb(s.documents.totalSizeBytes) %> · <%= fmt(s.storage.vectorsRows) %> Vektoren</div>
+  </div>
+  <div class="card hover stat">
+    <div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg> KI-Abfragen (30T)</div>
+    <div class="value"><%= fmt(s.queries.total) %></div>
+    <div class="sub"><%= fmt(s.llmCalls.total) %> LLM-Aufrufe</div>
+  </div>
+  <div class="card hover stat">
+    <div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg> Aufsicht offen</div>
+    <div class="value"><%= fmt(s.compliance.oversightPending) %></div>
+    <div class="sub"><span class="dot <%= pendOk ? 'ok' : 'warn pulse' %>"></span> <%= pendOk ? 'keine offenen Anträge' : 'wartet auf Freigabe' %></div>
+  </div>
+</div>
+
+<div class="grid cols-2 mt-16">
+  <div class="card">
+    <div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg> KI-Abfragen über Zeit (30 Tage)</div>
+    <% if (pts.length) { %>
+      <svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true">
+        <path class="area" d="<%= areaPath %>"/>
+        <path class="line" d="<%= linePath %>"/>
+      </svg>
+      <div class="sub mt-8">Spitze: <%= fmt(maxQ) %> Abfragen/Tag · gesamt <%= fmt(s.queries.total) %></div>
+    <% } else { %>
+      <div class="empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 3v18h18"/><path d="m7 14 3-3 4 4 5-6"/></svg>
+        <h3>Noch keine Abfragen</h3>
+        <p>Sobald Nutzer die Wissensbasis durchsuchen, erscheint hier der Verlauf.</p>
+      </div>
+    <% } %>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 10 10"/></svg> Benutzerstruktur</div>
+    <% if (u.total > 0) { %>
+      <div class="donut">
+        <div class="donut-wrap">
+          <svg class="svg-donut" viewBox="0 0 40 40" aria-hidden="true">
+            <circle class="track" cx="20" cy="20" r="15.915"/>
+            <circle class="seg seg-ok" cx="20" cy="20" r="15.915" stroke-dasharray="<%= segActive.toFixed(2) %> <%= (C - segActive).toFixed(2) %>" stroke-dashoffset="0"/>
+            <circle class="seg seg-accent" cx="20" cy="20" r="15.915" stroke-dasharray="<%= segInvited.toFixed(2) %> <%= (C - segInvited).toFixed(2) %>" stroke-dashoffset="<%= offInvited.toFixed(2) %>"/>
+            <circle class="seg seg-err" cx="20" cy="20" r="15.915" stroke-dasharray="<%= segDeact.toFixed(2) %> <%= (C - segDeact).toFixed(2) %>" stroke-dashoffset="<%= offDeact.toFixed(2) %>"/>
+          </svg>
+          <div class="center"><div class="value"><%= fmt(u.total) %></div><div class="sub">gesamt</div></div>
+        </div>
+        <div class="legend">
+          <span><i class="i-ok"></i> Aktiv — <%= fmt(u.active) %></span>
+          <span><i class="i-accent"></i> Eingeladen — <%= fmt(u.invited) %></span>
+          <span><i class="i-err"></i> Deaktiviert — <%= fmt(u.deactivated) %></span>
+        </div>
+      </div>
+    <% } else { %>
+      <div class="empty"><h3>Keine Benutzer</h3><p>Laden Sie Teammitglieder unter „Benutzer“ ein.</p></div>
+    <% } %>
+  </div>
+</div>
+
+<div class="grid cols-2 mt-16">
+  <div class="card">
+    <div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="10" width="3" height="8"/><rect x="12" y="6" width="3" height="12"/><rect x="17" y="13" width="3" height="5"/></svg> Dokumente nach Klassifizierung</div>
+    <% if (ck.length) { %>
+      <div class="bars">
+        <% ck.forEach(function (k) { %>
+          <div class="bar-row"><span><%= k %></span><div class="bar-track"><div class="bar-fill w-<%= bucket((bc[k] / maxC) * 100) %>"></div></div><span class="num"><%= fmt(bc[k]) %></span></div>
+        <% }) %>
+      </div>
+    <% } else { %>
+      <div class="empty"><h3>Noch keine Dokumente</h3><p>Laden Sie Dokumente über die API oder das Frontend hoch.</p></div>
+    <% } %>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> Systemstatus</div>
+    <div class="status-row"><span class="dot ok pulse"></span><span class="label">Datenbank &amp; RLS</span><span class="pill ok">betriebsbereit</span></div>
+    <div class="status-row"><span class="dot ok"></span><span class="label">Vektorsuche (pgvector)</span><span class="meta"><%= fmt(s.storage.vectorsRows) %> Zeilen</span></div>
+    <div class="status-row"><span class="dot <%= pendOk ? 'ok' : 'warn' %>"></span><span class="label">KI-Aufsicht (EU AI Act)</span><span class="pill <%= pendOk ? 'ok' : 'warn' %>"><%= pendOk ? 'aktuell' : fmt(s.compliance.oversightPending) + ' offen' %></span></div>
+    <div class="status-row"><span class="dot ok"></span><span class="label">DSGVO-Löschungen</span><span class="meta"><%= fmt(s.compliance.gdprErasures) %> ausgeführt</span></div>
+  </div>
 </div>
 <%~ include("_foot") %>

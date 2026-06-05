@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800" font-family="system-ui, -apple-system, Segoe UI, Roboto, sans-serif">
+  <rect width="1280" height="800" fill="#0f1419"/>
+  <rect width="240" height="800" fill="#161b22"/>
+  <rect x="18" y="22" width="30" height="30" rx="9" fill="#4f9cf933"/>
+  <path d="M33 30 l-7 3 v5 c0 4 3 6 7 8 4-2 7-4 7-8 v-5 z" fill="none" stroke="#4f9cf9" stroke-width="2"/>
+  <text x="58" y="36" fill="#e6edf3" font-size="16" font-weight="700">Capybara_AI</text>
+  <text x="58" y="50" fill="#6b7785" font-size="10">Admin-Konsole</text>
+  <text x="44" y="102" fill="#9aa7b4" font-size="14">Dashboard</text>
+  <text x="44" y="142" fill="#9aa7b4" font-size="14">Dokumente</text>
+  <rect x="8" y="158" width="224" height="38" rx="8" fill="#4f9cf922"/>
+  <text x="44" y="182" fill="#4f9cf9" font-size="14" font-weight="600">Compliance</text>
+  <text x="44" y="226" fill="#9aa7b4" font-size="14">SSO</text>
+  <line x1="240" y1="64" x2="1280" y2="64" stroke="#2a3441"/>
+  <text x="272" y="40" fill="#e6edf3" font-size="19" font-weight="650">Compliance</text>
+
+  <rect x="272" y="92" width="976" height="592" rx="12" fill="#1a212b" stroke="#2a3441"/>
+  <text x="292" y="124" fill="#9aa7b4" font-size="12" font-weight="600">KI-INVENTAR — ART. 4 EU AI ACT</text>
+  <rect x="1090" y="106" width="142" height="24" rx="12" fill="#d2992222"/>
+  <text x="1100" y="122" fill="#d29922" font-size="11">KI-generierter Inhalt</text>
+
+  <!-- table header -->
+  <line x1="292" y1="150" x2="1228" y2="150" stroke="#2a3441"/>
+  <text x="300" y="172" fill="#6b7785" font-size="11">MODELL</text>
+  <text x="560" y="172" fill="#6b7785" font-size="11">ANBIETER</text>
+  <text x="800" y="172" fill="#6b7785" font-size="11">RISIKOKLASSE</text>
+  <text x="1020" y="172" fill="#6b7785" font-size="11">MENSCHLICHE AUFSICHT</text>
+
+  <g font-size="14">
+    <text x="300" y="216" fill="#e6edf3" font-weight="600">llama3:70b</text><text x="560" y="216" fill="#9aa7b4">Ollama (lokal)</text>
+    <rect x="800" y="202" width="86" height="22" rx="11" fill="#3fb95022"/><text x="812" y="217" fill="#3fb950" font-size="11">MINIMAL</text>
+    <circle cx="1026" cy="211" r="4" fill="#3fb950"/><text x="1040" y="216" fill="#9aa7b4">nicht erforderlich</text>
+    <line x1="292" y1="240" x2="1228" y2="240" stroke="#222b36"/>
+
+    <text x="300" y="282" fill="#e6edf3" font-weight="600">gpt-4o</text><text x="560" y="282" fill="#9aa7b4">OpenAI</text>
+    <rect x="800" y="268" width="86" height="22" rx="11" fill="#d2992222"/><text x="812" y="283" fill="#d29922" font-size="11">LIMITED</text>
+    <circle cx="1026" cy="277" r="4" fill="#3fb950"/><text x="1040" y="282" fill="#9aa7b4">nicht erforderlich</text>
+    <line x1="292" y1="306" x2="1228" y2="306" stroke="#222b36"/>
+
+    <text x="300" y="348" fill="#e6edf3" font-weight="600">claude-opus-4</text><text x="560" y="348" fill="#9aa7b4">Anthropic</text>
+    <rect x="800" y="334" width="70" height="22" rx="11" fill="#f8514922"/><text x="812" y="349" fill="#f85149" font-size="11">HIGH</text>
+    <circle cx="1026" cy="343" r="4" fill="#d29922"/><text x="1040" y="348" fill="#9aa7b4">erforderlich</text>
+    <line x1="292" y1="372" x2="1228" y2="372" stroke="#222b36"/>
+
+    <text x="300" y="414" fill="#e6edf3" font-weight="600">nomic-embed-text</text><text x="560" y="414" fill="#9aa7b4">Ollama (lokal)</text>
+    <rect x="800" y="400" width="86" height="22" rx="11" fill="#3fb95022"/><text x="812" y="415" fill="#3fb950" font-size="11">MINIMAL</text>
+    <circle cx="1026" cy="409" r="4" fill="#3fb950"/><text x="1040" y="414" fill="#9aa7b4">nicht erforderlich</text>
+  </g>
+
+  <rect x="292" y="612" width="260" height="44" rx="8" fill="#2f7de0"/>
+  <path d="M312 634 l0 -14 m-5 9 l5 5 l5 -5 m-13 9 l16 0" stroke="#fff" stroke-width="2" fill="none"/>
+  <text x="356" y="639" fill="#fff" font-size="14" font-weight="600">Compliance-Bericht (PDF)</text>
+  <text x="640" y="762" text-anchor="middle" fill="#3a4450" font-size="12">Vorschau-Platzhalter · Compliance-Bericht · 1280×800</text>
+</svg>

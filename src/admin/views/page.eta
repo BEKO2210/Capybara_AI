@@ -1,5 +1,4 @@
-<%~ include("_head", { title: it.title }) %>
-<h1><%= it.title %></h1>
+<%~ include("_head", { title: it.title, active: it.active }) %>
 <div class="card">
 <%~ it.body %>
 </div>

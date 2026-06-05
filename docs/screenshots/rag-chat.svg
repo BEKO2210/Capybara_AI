@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800" font-family="system-ui, -apple-system, Segoe UI, Roboto, sans-serif">
+  <rect width="1280" height="800" fill="#0f1419"/>
+  <rect width="240" height="800" fill="#161b22"/>
+  <rect x="18" y="22" width="30" height="30" rx="9" fill="#4f9cf933"/>
+  <path d="M33 30 l-7 3 v5 c0 4 3 6 7 8 4-2 7-4 7-8 v-5 z" fill="none" stroke="#4f9cf9" stroke-width="2"/>
+  <text x="58" y="36" fill="#e6edf3" font-size="16" font-weight="700">Capybara_AI</text>
+  <text x="58" y="50" fill="#6b7785" font-size="10">Admin-Konsole</text>
+  <rect x="8" y="118" width="224" height="38" rx="8" fill="#4f9cf922"/>
+  <text x="44" y="102" fill="#9aa7b4" font-size="14">Dashboard</text>
+  <text x="44" y="142" fill="#4f9cf9" font-size="14" font-weight="600">Dokumente</text>
+  <text x="44" y="186" fill="#9aa7b4" font-size="14">Compliance</text>
+  <text x="44" y="226" fill="#9aa7b4" font-size="14">SSO</text>
+  <line x1="240" y1="64" x2="1280" y2="64" stroke="#2a3441"/>
+  <text x="272" y="40" fill="#e6edf3" font-size="19" font-weight="650">Dokumente &amp; RAG-Chat</text>
+
+  <!-- upload card -->
+  <rect x="272" y="92" width="360" height="592" rx="12" fill="#1a212b" stroke="#2a3441"/>
+  <text x="292" y="124" fill="#9aa7b4" font-size="12" font-weight="600">DOKUMENT HOCHLADEN</text>
+  <rect x="292" y="140" width="320" height="120" rx="10" fill="#11161d" stroke="#2a3441" stroke-dasharray="6 5"/>
+  <text x="452" y="196" text-anchor="middle" fill="#6b7785" font-size="13">Datei hierher ziehen</text>
+  <text x="452" y="216" text-anchor="middle" fill="#4f9cf9" font-size="13">oder durchsuchen</text>
+  <text x="292" y="296" fill="#9aa7b4" font-size="12">Klassifizierung</text>
+  <rect x="292" y="306" width="320" height="40" rx="8" fill="#11161d" stroke="#2a3441"/>
+  <text x="306" y="331" fill="#e6edf3" font-size="13">CONFIDENTIAL</text>
+  <rect x="292" y="362" width="160" height="42" rx="8" fill="#2f7de0"/>
+  <text x="372" y="389" text-anchor="middle" fill="#fff" font-size="14" font-weight="600">Hochladen</text>
+  <text x="292" y="440" fill="#9aa7b4" font-size="12" font-weight="600">ZULETZT</text>
+  <text x="292" y="470" fill="#e6edf3" font-size="13">handbuch-2026.pdf</text><circle cx="600" cy="466" r="4" fill="#3fb950"/>
+  <text x="292" y="498" fill="#e6edf3" font-size="13">dsgvo-richtlinie.docx</text><circle cx="600" cy="494" r="4" fill="#3fb950"/>
+  <text x="292" y="526" fill="#e6edf3" font-size="13">quartalsbericht.xlsx</text><circle cx="600" cy="522" r="4" fill="#3fb950"/>
+
+  <!-- chat card -->
+  <rect x="648" y="92" width="600" height="592" rx="12" fill="#1a212b" stroke="#2a3441"/>
+  <text x="668" y="124" fill="#9aa7b4" font-size="12" font-weight="600">RAG-CHAT — ÜBER IHRE WISSENSBASIS</text>
+  <rect x="820" y="150" width="408" height="56" rx="12" fill="#2f7de022"/>
+  <text x="840" y="174" fill="#cfe0f5" font-size="13">Welche Aufbewahrungsfrist gilt für</text>
+  <text x="840" y="192" fill="#cfe0f5" font-size="13">Vertragsunterlagen?</text>
+  <rect x="668" y="226" width="470" height="120" rx="12" fill="#11161d" stroke="#2a3441"/>
+  <text x="688" y="252" fill="#e6edf3" font-size="13">Laut Ihrer DSGVO-Richtlinie beträgt die</text>
+  <text x="688" y="272" fill="#e6edf3" font-size="13">Aufbewahrungsfrist für Vertragsunterlagen</text>
+  <text x="688" y="292" fill="#e6edf3" font-size="13">10 Jahre (§ 257 HGB).</text>
+  <rect x="688" y="306" width="118" height="22" rx="11" fill="#4f9cf922"/><text x="700" y="321" fill="#4f9cf9" font-size="11">Quelle: dsgvo-richtlinie.docx</text>
+  <rect x="668" y="360" width="220" height="20" rx="6" fill="#161b22"/>
+  <text x="678" y="375" fill="#6b7785" font-size="11">⚠ KI-generiert · EU AI Act Art. 50 · Modell: llama3</text>
+  <rect x="668" y="624" width="560" height="44" rx="10" fill="#11161d" stroke="#2a3441"/>
+  <text x="688" y="651" fill="#6b7785" font-size="13">Frage stellen …</text>
+  <rect x="1166" y="630" width="56" height="32" rx="8" fill="#2f7de0"/>
+  <path d="M1186 646 l16 0 m-6 -6 l6 6 l-6 6" stroke="#fff" stroke-width="2" fill="none"/>
+  <text x="640" y="762" text-anchor="middle" fill="#3a4450" font-size="12">Vorschau-Platzhalter · Dokument-Upload + RAG-Chat · 1280×800</text>
+</svg>
