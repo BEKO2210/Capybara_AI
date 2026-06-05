@@ -1,6 +1,6 @@
 {
   "name": "capybara-ai",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "private": true,
   "description": "Enterprise security-first, self-hostable AI system",
   "license": "Apache-2.0",
@@ -13,7 +13,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "db:migrate": "tsx src/db/migrate-cli.ts"
+    "db:migrate": "tsx src/db/migrate-cli.ts",
+    "verify:chain": "tsx src/audit/verifyChain-cli.ts"
   },
   "dependencies": {
     "@fastify/cookie": "11.0.2",

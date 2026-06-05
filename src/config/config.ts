@@ -25,6 +25,19 @@ export interface Config {
   readonly secureCookies: boolean;
   readonly logLevel: RawEnv['LOG_LEVEL'];
   readonly rateLimit: { readonly max: number; readonly windowMs: number };
+  /** Layered, identity-scoped limits + per-org storage quota + login lockout. */
+  readonly limits: {
+    readonly llmHourly: number;
+    readonly uploadsHourly: number;
+    readonly streamsPerOrg: number;
+    readonly storageQuotaBytes: number;
+    readonly login: {
+      readonly maxFailures: number;
+      readonly windowMs: number;
+      readonly lockBaseMs: number;
+      readonly lockMaxMs: number;
+    };
+  };
   readonly llm: {
     readonly providers: readonly LlmProviderConfig[];
     readonly defaultProvider: string | undefined;
@@ -32,6 +45,8 @@ export interface Config {
   };
   /** 32-byte key for AES-256-GCM encryption at rest. */
   readonly encryptionKey: Buffer;
+  /** Master KEK for envelope encryption + key rotation. */
+  readonly masterKek: Buffer;
   /** OIDC settings, present only when all four OIDC_* vars are configured. */
   readonly oidc:
     | {
@@ -223,6 +238,16 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     encryptionKey = randomBytes(32); // ephemeral dev key
   }
 
+  // 8b. Master KEK (envelope encryption / key rotation).
+  let masterKek = parseEncryptionKey(e.MASTER_KEK);
+  if (isProduction) {
+    if (!masterKek) {
+      issues.push({ variable: 'MASTER_KEK', reason: e.MASTER_KEK ? 'must be 32 bytes (hex or base64)' : 'required in production but missing' });
+    }
+  } else if (!masterKek) {
+    masterKek = randomBytes(32); // ephemeral dev key
+  }
+
   // 9. OIDC — all-or-nothing.
   const oidcParts = [e.OIDC_ISSUER, e.OIDC_CLIENT_ID, e.OIDC_CLIENT_SECRET, e.OIDC_REDIRECT_URI];
   const oidcCount = oidcParts.filter((v) => v && v.length > 0).length;
@@ -280,12 +305,25 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     secureCookies: isProduction ? true : env['SECURE_COOKIES'] !== 'false',
     logLevel: e.LOG_LEVEL,
     rateLimit: { max: e.RATE_LIMIT_MAX, windowMs: e.RATE_LIMIT_WINDOW_MS },
+    limits: {
+      llmHourly: e.RATE_LIMIT_LLM_HOURLY,
+      uploadsHourly: e.RATE_LIMIT_UPLOADS_HOURLY,
+      streamsPerOrg: e.RATE_LIMIT_STREAMS_PER_ORG,
+      storageQuotaBytes: e.STORAGE_QUOTA_MB_PER_ORG * 1024 * 1024,
+      login: {
+        maxFailures: e.LOGIN_MAX_FAILURES,
+        windowMs: e.LOGIN_FAILURE_WINDOW_MS,
+        lockBaseMs: e.LOGIN_LOCK_BASE_MS,
+        lockMaxMs: e.LOGIN_LOCK_MAX_MS,
+      },
+    },
     llm: {
       providers: llmProviders,
       defaultProvider: e.LLM_DEFAULT_PROVIDER,
       requestTimeoutMs: e.LLM_REQUEST_TIMEOUT_MS,
     },
     encryptionKey: encryptionKey as Buffer,
+    masterKek: masterKek as Buffer,
     oidc,
     documentEncryptionKey: documentEncryptionKey as Buffer,
     embeddings: {

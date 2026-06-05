@@ -86,5 +86,39 @@ services:
       - /tmp
     restart: unless-stopped
 
+  # On-demand backup (db dump + retention). Opt-in via the `backup` profile so it
+  # never runs as part of a normal `up`. Mirrors scripts/backup.sh but uses the
+  # postgres image (which ships pg_dump). Schedule it from the host cron / a
+  # sidecar scheduler — see docs/DISASTER_RECOVERY.md.
+  #   docker compose -f docker/docker-compose.yml --profile backup run --rm backup
+  backup:
+    image: postgres:16-alpine
+    profiles: ['backup']
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD:?}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+    volumes:
+      - capy-backups:/backups
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    entrypoint: ['/bin/sh', '-ec']
+    command:
+      - |
+        ts="$$(date -u +%Y%m%d-%H%M%S)"
+        out="/backups/capybara-db-$$ts.sql.gz"
+        echo "dumping database -> $$out"
+        pg_dump --no-owner --no-privileges -h db -U "${POSTGRES_USER:-postgres}" -d "${POSTGRES_DB:-capybara}" | gzip -9 > "$$out"
+        chmod 600 "$$out"
+        echo "pruning backups older than $${BACKUP_RETENTION_DAYS} days"
+        find /backups -maxdepth 1 -type f -name 'capybara-db-*' -mtime "+$${BACKUP_RETENTION_DAYS}" -print -delete || true
+        echo "backup complete"
+    restart: 'no'
+
 volumes:
   capy-db-data:
+  capy-backups:

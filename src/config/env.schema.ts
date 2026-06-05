@@ -41,6 +41,20 @@ export const envSchema = z.object({
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(100),
   RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60_000),
 
+  // Layered, identity-scoped limits (P2 hardening).
+  RATE_LIMIT_LLM_HOURLY: z.coerce.number().int().positive().default(50),
+  RATE_LIMIT_UPLOADS_HOURLY: z.coerce.number().int().positive().default(20),
+  RATE_LIMIT_STREAMS_PER_ORG: z.coerce.number().int().positive().default(10),
+  STORAGE_QUOTA_MB_PER_ORG: z.coerce.number().int().positive().default(500),
+
+  // Account brute-force lockout (P2 hardening). After LOGIN_MAX_FAILURES within
+  // LOGIN_FAILURE_WINDOW_MS the account locks for LOGIN_LOCK_BASE_MS, doubling
+  // on each successive lock up to LOGIN_LOCK_MAX_MS.
+  LOGIN_MAX_FAILURES: z.coerce.number().int().positive().default(10),
+  LOGIN_FAILURE_WINDOW_MS: z.coerce.number().int().positive().default(900_000),
+  LOGIN_LOCK_BASE_MS: z.coerce.number().int().positive().default(900_000),
+  LOGIN_LOCK_MAX_MS: z.coerce.number().int().positive().default(86_400_000),
+
   // LLM providers as a JSON array of {id,type,baseUrl,model,apiKey?}. Endpoints
   // are SERVER-ONLY: callers select a provider by id, never by URL.
   LLM_PROVIDERS: z.string().optional(),
@@ -50,6 +64,10 @@ export const envSchema = z.object({
   // 32-byte key (base64 or hex) for AES-256-GCM encryption at rest (e.g. TOTP
   // secrets). Required in production; ephemeral in dev if unset.
   ENCRYPTION_KEY: z.string().optional(),
+
+  // Master Key-Encryption-Key (KEK) for envelope encryption + key rotation.
+  // 32-byte hex. Required in production; ephemeral in dev if unset.
+  MASTER_KEK: z.string().optional(),
 
   // OIDC (all-or-nothing). PKCE authorization-code flow; no implicit grant.
   OIDC_ISSUER: z.string().url().optional(),

@@ -4,7 +4,7 @@ import type { AppDatabase } from '../../db/client.js';
 import { ROLES, type Role } from '../../db/schema/index.js';
 import { clearanceForRole } from '../../rbac/roles.js';
 import { requirePermission, requireRole } from '../../rbac/guard.js';
-import { listUsers, inviteUser, changeRole, deactivateUser, userActivity, AdminError } from '../../admin/users.js';
+import { listUsers, inviteUser, changeRole, deactivateUser, userActivity, unlockUser, AdminError } from '../../admin/users.js';
 import { orgStats } from '../../admin/stats.js';
 import { createExportJob, runExportJob, getJob, takeDownloadToken, consumeDownload, type ExportDeps } from '../../admin/export.js';
 
@@ -60,6 +60,16 @@ export function registerAdminRoutes(app: FastifyInstance, deps: AdminRoutesDeps)
   app.get<{ Params: { id: string } }>('/api/admin/users/:id/activity', adminOnly, (req) =>
     userActivity(deps.db, ctxOf(req), req.params.id),
   );
+
+  // Clear a brute-force lockout for a member (admin only).
+  app.post<{ Params: { id: string } }>('/api/admin/users/:id/unlock', adminOnly, async (req, reply) => {
+    try {
+      return await unlockUser(deps.db, ctxOf(req), req.params.id);
+    } catch (e) {
+      if (e instanceof AdminError) return reply.code(404).send({ error: e.code });
+      throw e;
+    }
+  });
 
   app.get('/api/admin/stats', adminOnly, (req) => {
     const days = Number((req.query as { days?: string }).days) || 30;

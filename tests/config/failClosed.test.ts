@@ -18,6 +18,7 @@ function prodEnv(overrides: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
     APP_BASE_URL: 'https://app.acme-corp.io',
     ENCRYPTION_KEY: STRONG_ENC_KEY,
     DOCUMENT_ENCRYPTION_KEY: Buffer.alloc(32, 9).toString('hex'),
+    MASTER_KEK: Buffer.alloc(32, 3).toString('hex'),
     OLLAMA_BASE_URL: 'http://ollama.internal:11434',
     ...overrides,
   };
@@ -98,6 +99,11 @@ describe('config — fail-closed startup validation', () => {
   it('REFUSES a missing DOCUMENT_ENCRYPTION_KEY in production', () => {
     const issues = issuesOf(prodEnv({ DOCUMENT_ENCRYPTION_KEY: undefined }));
     expect(issues.some((i) => i.variable === 'DOCUMENT_ENCRYPTION_KEY')).toBe(true);
+  });
+
+  it('REFUSES a missing MASTER_KEK in production', () => {
+    const issues = issuesOf(prodEnv({ MASTER_KEK: undefined }));
+    expect(issues.some((i) => i.variable === 'MASTER_KEK')).toBe(true);
   });
 
   it('REFUSES local embeddings without OLLAMA_BASE_URL in production', () => {

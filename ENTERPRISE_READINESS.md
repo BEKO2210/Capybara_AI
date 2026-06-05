@@ -42,35 +42,40 @@ tested today**, and what is deferred to P1/P2. No capability is claimed as
 | Outbound webhooks (HMAC, retries, dead-letter) | ✅ Implemented + tested | `src/integrations/webhooks.ts`, `tests/integrations/` |
 | OpenAPI 3.1 spec (opt-in) | ✅ Implemented | `@fastify/swagger` at `/api/docs` (ENABLE_API_DOCS) |
 | Admin console UI (htmx, no CDN, no build) | ✅ Implemented + tested | `src/http/admin-ui.ts`, `src/admin/views/`, `tests/http/admin-ui.test.ts` |
-| SCIM provisioning | ❌ P2 | — |
+| SCIM 2.0 provisioning (RFC 7643/7644) | ✅ Implemented + tested | `src/integrations/scim.ts`, `tests/integrations/scim.test.ts` |
 | Cloud providers (OpenAI-compat, Anthropic) | ✅ Implemented + tested | `src/ai/providers/`, `tests/ai/cloud-providers.test.ts` |
-| Encryption at rest (field-level, AES-256-GCM) | 🟡 Secrets (e.g. TOTP) | `src/lib/crypto.ts`; broader field-level + KMS is P2 |
-| Per-token fine-grained scopes / API keys | ❌ P1/P2 | — |
-| Security-event off-box anchoring | ❌ P1 | chain is local today |
-| Admin console / SCIM provisioning | ❌ P2 | — |
-| Process/microVM isolation for tools | ❌ P2 | capability-scoped in-process today |
+| Field-level encryption + key rotation (envelope) | ✅ Implemented + tested | `src/admin/encryption.ts`, `tests/admin/encryption.test.ts` |
+| Layered rate limiting + storage quota | ✅ Implemented + tested | `src/http/rateLimits.ts`, `src/admin/storageQuota.ts`, `tests/admin/storageQuota.test.ts` |
+| Brute-force lockout + admin unlock | ✅ Implemented + tested | `src/auth/abuseGuard.ts`, `tests/auth/abuseGuard.test.ts` |
+| Backup/restore + disaster recovery runbook | ✅ Implemented | `scripts/backup.sh`, `scripts/restore.sh`, `docs/DISASTER_RECOVERY.md` |
+| Deep health check (db/vector/backup/version) | ✅ Implemented + tested | `src/http/health.ts`, `tests/http/health.test.ts` |
+| Per-token fine-grained scopes / API keys | ✅ Implemented + tested | `src/integrations/apiKeys.ts`, `src/http/apiKeyAuth.ts` |
+| Security-event off-box anchoring | ❌ P3 | chain is local today; verify via `npm run verify:chain` |
+| Process/microVM isolation for tools | ❌ P3 | capability-scoped in-process today |
+| KMS-backed master key | 🟡 Env-supplied KEK | `MASTER_KEK`; external KMS integration is future work |
 
 ## What "done" means here
 
-All 62 tests run against a real PostgreSQL 16 (Testcontainers) and assert both
-success and failure paths. Production startup is fail-closed. There is no mock
-data on production code paths — demo/fixtures live only under `tests/`.
+The full suite runs against a real PostgreSQL 16 (Testcontainers) and asserts
+both success and failure paths. Production startup is fail-closed. There is no
+mock data on production code paths — demo/fixtures live only under `tests/`.
 
 ## Honest gaps & how to compensate today
 
-1. **No SSO/MFA yet.** Mitigation: strong Argon2id local auth + the
-   `AuthProvider` seam means OIDC/SAML drop in without changing call sites.
-   For now, front the app with an SSO-capable reverse proxy if required.
-2. **In-process tool sandbox.** Tools are trusted code constrained by capability
+1. **In-process tool sandbox.** Tools are trusted code constrained by capability
    scopes; this is not a substitute for kernel isolation. Do not register tools
-   that execute untrusted code until the P2 microVM/worker isolation lands.
-3. **Audit chain is local.** A DB superuser could rewrite and recompute it.
-   Until off-box anchoring (P1), restrict superuser access and ship logs to an
-   append-only sink.
-4. **No field-level encryption.** Use encrypted storage/volumes and a managed
-   Postgres with encryption at rest; secrets stay in a secret manager.
-5. **DoS protections are per-instance.** Add a WAF/edge rate limiting for
-   internet-facing deployments.
+   that execute untrusted code until microVM/worker isolation lands (P3).
+2. **Audit chain is local.** A DB superuser could rewrite and recompute it.
+   Until off-box anchoring (P3), restrict superuser access, ship logs to an
+   append-only sink, and run `npm run verify:chain` regularly (and post-restore).
+3. **Master key is env-supplied.** Field-level encryption uses an envelope
+   scheme (`MASTER_KEK` wraps per-org DEKs) with rotation, but the KEK comes from
+   the environment. Source it from a secret manager; native KMS is future work.
+4. **DoS protections are per-instance.** Layered rate limiting, per-org storage
+   quota, and brute-force lockout are in-process; for internet-facing
+   deployments add a WAF/edge rate limiting and sticky routing for stream caps.
+5. **SAML is a stub.** OIDC SSO is delivered; full SAML is deferred (P3). Front
+   with an SSO-capable reverse proxy if SAML is mandatory today.
 
 ## Roadmap
 
@@ -83,13 +88,12 @@ data on production code paths — demo/fixtures live only under `tests/`.
 - **Phase C (delivered):** Enterprise integrations — admin console (REST + htmx
   UI), billing-ready metering, GDPR data export, production SSO/OIDC with
   auto-provisioning, scoped API keys, signed outbound webhooks, OpenAPI.
-- **P2 (next):** full SAML; microVM/worker isolation for tools; field-level
-  encryption + KMS; SCIM provisioning; BSI-C5 readiness; admin console depth.
-- **P1 (remaining):** scoped API tokens; security-event anchoring/log shipping;
-  approval UI + notifications.
-- **P2:** full SAML; microVM/worker isolation for dangerous tools; broader
-  field-level encryption + KMS; GDPR erasure workflows; admin console + SCIM;
-  anomaly detection.
+- **Phase D / P2 (delivered):** SCIM 2.0 provisioning; field-level encryption +
+  envelope key rotation; layered rate limiting, storage quota & brute-force
+  lockout; backup/restore + disaster-recovery runbook; deep `/healthz`.
+- **P3 (next):** full SAML; microVM/worker isolation for dangerous tools;
+  security-event off-box anchoring/log shipping; KMS-backed master key;
+  BSI-C5 readiness; approval UI + notifications; anomaly detection.
 
 ## Compliance posture
 

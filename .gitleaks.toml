@@ -13,5 +13,6 @@ paths = [
   '''tests/.*''',                       # test fixtures use fake secrets
   '''src/admin/static/htmx\.min\.js''', # vendored minified library (high-entropy, no secrets)
   '''docs/.*\.md''',                    # docs show illustrative example keys
+  '''scripts/.*\.sh''',                 # backup/restore scripts use ***-redacted example DSNs
   '''\.env\.example''',                 # documented placeholders, never real values
 ]
