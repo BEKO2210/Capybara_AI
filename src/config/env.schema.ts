@@ -71,6 +71,11 @@ export const envSchema = z.object({
   CLAMAV_SOCKET: z.string().optional(),
   // Base directory for encrypted document storage.
   DOCUMENT_STORAGE_DIR: z.string().default('/data/documents'),
+
+  // Enterprise integrations
+  ENABLE_API_DOCS: z.string().optional(),
+  WEBHOOK_TIMEOUT_MS: z.coerce.number().int().positive().default(5_000),
+  WEBHOOK_MAX_RETRIES: z.coerce.number().int().min(0).default(3),
 });
 
 export type RawEnv = z.infer<typeof envSchema>;

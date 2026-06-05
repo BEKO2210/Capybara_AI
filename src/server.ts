@@ -1,4 +1,6 @@
 import Fastify, { type FastifyInstance } from 'fastify';
+import swagger from '@fastify/swagger';
+import swaggerUi from '@fastify/swagger-ui';
 import type { Config } from './config/index.js';
 import { registerSecurity } from './http/security.js';
 import { registerErrorHandler } from './http/errors.js';
@@ -43,6 +45,14 @@ export async function buildServer(opts: BuildServerOptions): Promise<FastifyInst
   registerErrorHandler(app, config.isProduction);
   await registerSecurity(app, config);
   registerHealthRoutes(app);
+
+  // OpenAPI docs are OFF by default; opt in via ENABLE_API_DOCS=true.
+  if (config.enableApiDocs) {
+    await app.register(swagger, {
+      openapi: { openapi: '3.1.0', info: { title: 'Capybara_AI API', version: '0.0.0' } },
+    });
+    await app.register(swaggerUi, { routePrefix: '/api/docs' });
+  }
 
   if (opts.routes) {
     const routes = opts.routes;

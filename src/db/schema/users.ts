@@ -19,6 +19,8 @@ export const users = pgTable('users', {
   mfaEnabled: boolean('mfa_enabled').notNull().default(false),
   mfaSecret: text('mfa_secret'),
   mfaLastStep: bigint('mfa_last_step', { mode: 'number' }),
+  inviteTokenHash: text('invite_token_hash'),
+  lastActiveAt: timestamp('last_active_at', { withTimezone: true }),
 });
 
 export type User = typeof users.$inferSelect;

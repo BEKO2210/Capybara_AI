@@ -1,0 +1,15 @@
+<%~ include("_head", { title: "Compliance" }) %>
+<h1>Compliance <span class="badge ki">KI-generierter Inhalt</span></h1>
+<div class="card">
+<h3>KI-Inventar (Art. 4 EU AI Act)</h3>
+<table>
+<thead><tr><th>Modell</th><th>Anbieter</th><th>Risikoklasse</th><th>Aufsicht</th></tr></thead>
+<tbody>
+<% it.inventory.forEach(function(e){ %>
+<tr><td><%= e.modelName %></td><td><%= e.provider %></td><td><%= e.riskClass %></td><td><%= e.humanOversightRequired ? "erforderlich" : "—" %></td></tr>
+<% }) %>
+</tbody>
+</table>
+<p><a href="/api/compliance/report.pdf"><button>Compliance-Bericht (PDF)</button></a></p>
+</div>
+<%~ include("_foot") %>

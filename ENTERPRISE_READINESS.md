@@ -35,6 +35,14 @@ tested today**, and what is deferred to P1/P2. No capability is claimed as
 | Human oversight enforcement (Art. 14) | ✅ Implemented + tested | `src/compliance/oversight.ts`, sandbox integration |
 | Transparency envelope (Art. 50) | ✅ Implemented + tested | `src/http/aiResponseEnvelope.ts` |
 | Compliance report PDF (regulator-ready) | ✅ Implemented + tested | `src/compliance/report.ts`, `src/compliance/pdf.ts` |
+| Admin console REST (users/stats/export) | ✅ Implemented + tested | `src/admin/`, `src/http/routes/admin.ts`, `tests/admin/` |
+| Billing-ready metering (append-only) | ✅ Implemented + tested | `src/admin/metering.ts` |
+| SSO production (per-tenant OIDC + auto-provision) | ✅ Implemented + tested | `src/admin/sso.ts`, `tests/admin/sso.test.ts` |
+| API keys (scoped, per-key rate limit, audited) | ✅ Implemented + tested | `src/integrations/apiKeys.ts`, `src/http/apiKeyAuth.ts` |
+| Outbound webhooks (HMAC, retries, dead-letter) | ✅ Implemented + tested | `src/integrations/webhooks.ts`, `tests/integrations/` |
+| OpenAPI 3.1 spec (opt-in) | ✅ Implemented | `@fastify/swagger` at `/api/docs` (ENABLE_API_DOCS) |
+| Admin console UI (htmx, no CDN, no build) | ✅ Implemented + tested | `src/http/admin-ui.ts`, `src/admin/views/`, `tests/http/admin-ui.test.ts` |
+| SCIM provisioning | ❌ P2 | — |
 | Cloud providers (OpenAI-compat, Anthropic) | ✅ Implemented + tested | `src/ai/providers/`, `tests/ai/cloud-providers.test.ts` |
 | Encryption at rest (field-level, AES-256-GCM) | 🟡 Secrets (e.g. TOTP) | `src/lib/crypto.ts`; broader field-level + KMS is P2 |
 | Per-token fine-grained scopes / API keys | ❌ P1/P2 | — |
@@ -72,7 +80,11 @@ data on production code paths — demo/fixtures live only under `tests/`.
   GDPR erasure).
 - **Phase B (delivered):** EU AI Act compliance — KI-Inventar (Art. 4), human
   oversight (Art. 14), transparency envelope (Art. 50), compliance report PDF.
-- **Phase C (next):** TBD.
+- **Phase C (delivered):** Enterprise integrations — admin console (REST + htmx
+  UI), billing-ready metering, GDPR data export, production SSO/OIDC with
+  auto-provisioning, scoped API keys, signed outbound webhooks, OpenAPI.
+- **P2 (next):** full SAML; microVM/worker isolation for tools; field-level
+  encryption + KMS; SCIM provisioning; BSI-C5 readiness; admin console depth.
 - **P1 (remaining):** scoped API tokens; security-event anchoring/log shipping;
   approval UI + notifications.
 - **P2:** full SAML; microVM/worker isolation for dangerous tools; broader

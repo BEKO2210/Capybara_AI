@@ -54,6 +54,8 @@ export interface Config {
   readonly maxUploadBytes: number;
   readonly clamavSocket: string | undefined;
   readonly documentStorageDir: string;
+  readonly enableApiDocs: boolean;
+  readonly webhook: { readonly timeoutMs: number; readonly maxRetries: number };
 }
 
 /** Parse a 32-byte key from base64 or hex; null if neither yields 32 bytes. */
@@ -297,6 +299,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     maxUploadBytes: e.MAX_UPLOAD_SIZE_MB * 1024 * 1024,
     clamavSocket: e.CLAMAV_SOCKET,
     documentStorageDir: e.DOCUMENT_STORAGE_DIR,
+    // API docs are off by default; opt-in. Forced off is the safe default, but
+    // we allow it in any env when explicitly enabled.
+    enableApiDocs: e.ENABLE_API_DOCS === 'true',
+    webhook: { timeoutMs: e.WEBHOOK_TIMEOUT_MS, maxRetries: e.WEBHOOK_MAX_RETRIES },
   };
 
   return Object.freeze(config);

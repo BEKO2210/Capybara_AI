@@ -8,6 +8,7 @@ import type { AuthContext } from '../auth/context.js';
 declare module 'fastify' {
   interface FastifyRequest {
     authContext?: AuthContext;
+    apiKey?: { keyId: string; orgId: string; scopes: string[] };
   }
 }
 
