@@ -1,6 +1,8 @@
 <div align="center">
 
-# 🐹 Capybara_AI
+<img src="docs/assets/capybara-ai-logo.png" alt="Capybara_AI Logo" width="200">
+
+# Capybara_AI
 
 **Self-hosted, GDPR-compliant generative-AI workspace for SMBs.**
 
