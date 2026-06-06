@@ -82,13 +82,32 @@ function buildRegistry(): ToolRegistry {
     },
   };
 
+  let inProcessRan = false;
+  const isolatedTool: ToolDefinition<Record<string, never>> = {
+    name: 'run_untrusted',
+    description: 'executes untrusted code; must run in an external isolation boundary',
+    inputSchema: z.object({}),
+    dangerous: false,
+    requiresIsolation: true,
+    scopes: {},
+    timeoutMs: 5_000,
+    handler: async () => {
+      inProcessRan = true; // must NEVER run in-process
+      return { ok: true, output: 'in-process' };
+    },
+  };
+  isolationProbe.ran = () => inProcessRan;
+
   reg.register(fsReadTool);
   reg.register(netTool);
   reg.register(shellTool);
   reg.register(dangerousTool);
   reg.register(sleepTool);
+  reg.register(isolatedTool);
   return reg;
 }
+
+const isolationProbe: { ran: () => boolean } = { ran: () => false };
 
 let registry: ToolRegistry;
 let approvals: InMemoryApprovalStore;
@@ -197,6 +216,30 @@ describe('ai/tools — human approval for dangerous actions', () => {
     const inv = await executeTool(registry, 'delete_everything', {}, { approvals });
     expect(inv.decision).toBe('allowed');
     expect(dangerousRan).toBe(true);
+  });
+});
+
+describe('ai/tools — isolation boundary (untrusted code never runs in-process)', () => {
+  it('DENIES an isolation-required tool when no isolation runner is configured', async () => {
+    const inv = await executeTool(registry, 'run_untrusted', {}, { approvals });
+    expect(inv.decision).toBe('denied');
+    expect(inv.reason).toBe('isolation_unavailable');
+    expect(isolationProbe.ran()).toBe(false); // in-process handler was NOT called
+  });
+
+  it('routes an isolation-required tool to the external runner instead of the in-process handler', async () => {
+    let routed = false;
+    const runner = {
+      run: async () => {
+        routed = true;
+        return { ok: true, output: 'isolated-result' };
+      },
+    };
+    const inv = await executeTool(registry, 'run_untrusted', {}, { approvals, isolationRunner: runner });
+    expect(inv.decision).toBe('allowed');
+    expect(inv.result?.output).toBe('isolated-result');
+    expect(routed).toBe(true);
+    expect(isolationProbe.ran()).toBe(false); // still never in-process
   });
 });
 

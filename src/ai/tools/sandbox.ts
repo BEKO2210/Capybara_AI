@@ -5,7 +5,7 @@ import { redact as defaultRedact } from '../redaction/redactor.js';
 import type { ApprovalGate } from './approval.js';
 import type { ToolRegistry } from './registry.js';
 import { UnknownToolError } from './registry.js';
-import type { ToolContext, ToolResult, ToolScopes } from './tool.types.js';
+import type { ToolContext, ToolResult, ToolScopes, IsolationRunner } from './tool.types.js';
 import { requiresOversight, type OversightGate } from '../../compliance/oversight.js';
 
 export type ToolDecision = 'allowed' | 'denied' | 'pending_approval';
@@ -33,6 +33,11 @@ export interface ExecuteOptions {
   fetchImpl?: typeof fetch;
   /** DB-backed human-oversight gate (required for HIGH/CRITICAL-risk tools). */
   oversight?: OversightGate;
+  /**
+   * External isolation runner for tools marked `requiresIsolation`. When absent,
+   * such tools are DENIED (fail-closed) — untrusted code never runs in-process.
+   */
+  isolationRunner?: IsolationRunner;
 }
 
 class ToolTimeoutError extends Error {
@@ -76,7 +81,9 @@ function errorMessage(e: unknown): string {
  * Execute a tool through the sandbox. Order of enforcement (all fail closed):
  *   1. allowlist  — unknown tool => denied.
  *   2. validation — args must satisfy the tool's Zod schema.
- *   3. approval   — dangerous tools require an approved invocation.
+ *   3. approval   — dangerous tools require an approved invocation; HIGH-risk
+ *                   tools require human oversight; isolation-required tools are
+ *                   routed to an external runner (denied if none configured).
  *   4. scopes     — the handler only receives capabilities for its scopes.
  *   5. timeout    — hard wall-clock cap via AbortController.
  * Arguments are redacted for the returned record regardless of outcome.
@@ -138,6 +145,22 @@ export async function executeTool(
       };
     }
     oversightRequestId = decision.requestId;
+  }
+
+  // 3c. Isolation boundary — untrusted-code tools never run in-process.
+  if (def.requiresIsolation) {
+    if (!options.isolationRunner) {
+      return { tool: def.name, decision: 'denied', reason: 'isolation_unavailable', redactedArgs };
+    }
+    try {
+      const result = await options.isolationRunner.run(def, parsed.data, { timeoutMs: def.timeoutMs });
+      if (oversightRequestId && options.oversight?.recordOutcome) {
+        await options.oversight.recordOutcome(oversightRequestId, `executed (isolated): ok=${result.ok}`);
+      }
+      return { tool: def.name, decision: 'allowed', result, redactedArgs };
+    } catch (e) {
+      return { tool: def.name, decision: 'allowed', result: { ok: false, error: errorMessage(e) }, redactedArgs };
+    }
   }
 
   // 4 + 5. Scoped capabilities + hard timeout.

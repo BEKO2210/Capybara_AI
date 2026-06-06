@@ -24,7 +24,7 @@ tested today**, and what is deferred to P1/P2. No capability is claimed as
 | CI: typecheck/build/test | ✅ Implemented | `.github/workflows/ci.yml` |
 | Supply chain: lockfile/audit/SBOM/OSV/gitleaks | ✅ Implemented | `.github/workflows/security.yml` |
 | OIDC SSO (PKCE) | ✅ Implemented + tested | `src/auth/oidc.provider.ts`, `tests/auth/oidc.test.ts` |
-| SAML SSO | ⚠️ Stub (interface) | `src/auth/saml.provider.ts` (full impl P2) |
+| SAML 2.0 SSO (signed, fail-closed) | ✅ Implemented + tested | `src/auth/saml.provider.ts` (@node-saml/node-saml), `tests/auth/saml.test.ts` |
 | MFA / TOTP + backup codes | ✅ Implemented + tested | `src/auth/mfa.ts`, `tests/auth/mfa.test.ts` |
 | Streaming (SSE) LLM responses | ✅ Implemented + tested | `src/http/aiStream.ts`, `tests/ai/streaming.test.ts` |
 | Document intelligence / RAG (pgvector) | ✅ Implemented + tested | `src/documents/`, `src/ai/embeddings/`, `tests/documents/` |
@@ -53,7 +53,12 @@ tested today**, and what is deferred to P1/P2. No capability is claimed as
 | Security-event off-box anchoring (Ed25519) | ✅ Implemented + tested | `src/audit/anchor.ts`, `tests/audit/anchor.test.ts`; `npm run audit:anchor` / `verify:chain` |
 | KMS / secret-manager key source | ✅ Implemented + tested | `src/config/keySource.ts` (`KEY_SOURCE=file`), `tests/config/keySource.test.ts`; native KMS client is P3 |
 | Shared rate-limit store (horizontal scale) | ✅ Seam implemented | `buildServer({ rateLimitRedis })` → `@fastify/rate-limit` |
-| Process/microVM isolation for tools | ❌ P3 | capability-scoped in-process today |
+| Native KMS key source (command) | ✅ Implemented + tested | `KEY_SOURCE=command` (`src/config/keySource.ts`) — Vault/AWS-KMS CLI |
+| Untrusted-tool isolation (fail-closed seam) | ✅ Implemented + tested | `requiresIsolation` + `IsolationRunner` (`src/ai/tools/sandbox.ts`, `tests/ai/sandbox.test.ts`) — denied unless an external runner is wired |
+| Anomaly detection on the audit stream | ✅ Implemented + tested | `src/security/anomaly.ts`, `tests/security/anomaly.test.ts`; `npm run detect:anomalies` |
+| Human-oversight approval UI + notifications | ✅ Implemented + tested | `/admin/oversight` + `OversightNotifier` (`src/http/admin-ui.ts`, `src/compliance/oversight.ts`) |
+| BSI IT-Grundschutz readiness mapping | ✅ Documented | `docs/security/BSI_GRUNDSCHUTZ_MAPPING.md` |
+| In-VM/microVM kernel isolation for tools | ❌ P3 | seam ready; operator supplies a container/microVM runner |
 
 ## What "done" means here
 
@@ -63,9 +68,11 @@ mock data on production code paths — demo/fixtures live only under `tests/`.
 
 ## Honest gaps & how to compensate today
 
-1. **In-process tool sandbox.** Tools are trusted code constrained by capability
-   scopes; this is not a substitute for kernel isolation. Do not register tools
-   that execute untrusted code until microVM/worker isolation lands (P3).
+1. **Untrusted-tool isolation is fail-closed but operator-supplied.** A tool
+   marked `requiresIsolation` is DENIED unless an external `IsolationRunner`
+   (container-per-invocation / microVM / gVisor) is wired — so untrusted code
+   never runs in-process. The kernel-isolated runner itself is operator-provided
+   (a bundled microVM runner is P3).
 2. **Audit anchoring requires off-box key custody.** Signed Ed25519 checkpoints
    (`npm run audit:anchor`) make a DB-superuser rewrite detectable via the public
    key — but only if the private key and the public verifier live off the DB host
@@ -79,8 +86,10 @@ mock data on production code paths — demo/fixtures live only under `tests/`.
    brute-force lockout are enforced in-process; inject a shared store
    (`rateLimitRedis`) for a global budget across replicas, and add a WAF/edge
    rate limiting + sticky routing for stream caps on internet-facing deployments.
-5. **SAML is a stub.** OIDC SSO is delivered; full SAML is deferred (P3). Front
-   with an SSO-capable reverse proxy if SAML is mandatory today.
+5. **SAML 2.0 is delivered** (SP-initiated POST binding, signed assertions
+   verified via `@node-saml/node-saml`). Replay binding via `InResponseTo`
+   requires a server-side request cache (operator option); signature + audience +
+   `NotOnOrAfter` are always enforced.
 
 ## Roadmap
 
@@ -98,9 +107,12 @@ mock data on production code paths — demo/fixtures live only under `tests/`.
   lockout; backup/restore + disaster-recovery runbook; deep `/healthz`.
 - **Post-1.0 hardening (delivered):** off-box Ed25519 audit anchoring; KMS /
   secret-manager key source (`KEY_SOURCE=file`); shared rate-limit store seam.
-- **P3 (next):** full SAML; microVM/worker isolation for dangerous tools; native
-  in-process KMS decrypt client; BSI-C5 readiness; approval UI + notifications;
-  anomaly detection.
+- **P3 (delivered):** SAML 2.0 SSO; native KMS key source (`KEY_SOURCE=command`);
+  fail-closed untrusted-tool isolation seam; audit-stream anomaly detection;
+  human-oversight approval UI + notification seam; BSI IT-Grundschutz mapping.
+- **P4 (next):** bundled microVM/gVisor tool runner; in-process KMS decrypt
+  client; SAML `InResponseTo` replay cache; managed SIEM integration; BSI-C5
+  audit support.
 
 ## Compliance posture
 

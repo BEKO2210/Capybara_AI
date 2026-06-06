@@ -6,6 +6,22 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added — P3
+- **SAML 2.0 SSO** (SP-initiated POST binding): signed assertions verified via
+  `@node-saml/node-saml` (XSW-safe), with signature, audience and `NotOnOrAfter`
+  enforcement; fail-closed. Configured all-or-nothing via `SAML_*`.
+- **Untrusted-tool isolation seam**: tools may declare `requiresIsolation`; such a
+  tool is **denied unless** an external `IsolationRunner` (container/microVM) is
+  wired — untrusted code never runs in-process.
+- **Anomaly detection** over the audit stream (`npm run detect:anomalies`):
+  lockout / oversight-rejection / key-rotation / role-change bursts raise
+  tamper-evident `security.anomaly` events with optional notifications.
+- **Human-oversight approval UI** at `/admin/oversight` (approve/reject, CSRF-
+  protected, toasts) + an `OversightNotifier` seam fired on new requests.
+- **Native KMS key source** `KEY_SOURCE=command` (e.g. `vault`, `aws kms`),
+  fail-closed on non-zero exit.
+- **BSI IT-Grundschutz readiness mapping** (`docs/security/BSI_GRUNDSCHUTZ_MAPPING.md`).
+
 ### Added — post-1.0 review hardening
 - **Off-box audit anchoring** (Ed25519): signed checkpoints commit to the
   security-event chain head so a DB-superuser rewrite is detectable with a public

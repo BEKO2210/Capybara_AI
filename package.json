@@ -15,7 +15,8 @@
     "test:watch": "vitest",
     "db:migrate": "tsx src/db/migrate-cli.ts",
     "verify:chain": "tsx src/audit/verifyChain-cli.ts",
-    "audit:anchor": "tsx src/audit/anchor-cli.ts"
+    "audit:anchor": "tsx src/audit/anchor-cli.ts",
+    "detect:anomalies": "tsx src/security/anomaly-cli.ts"
   },
   "dependencies": {
     "@fastify/cookie": "11.0.2",
@@ -29,6 +30,7 @@
     "@fastify/swagger-ui": "5.2.6",
     "@fastify/view": "11.1.1",
     "@node-rs/argon2": "2.0.2",
+    "@node-saml/node-saml": "5.1.0",
     "archiver": "7.0.1",
     "drizzle-orm": "0.45.2",
     "eta": "4.6.0",

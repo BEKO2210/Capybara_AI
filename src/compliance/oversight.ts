@@ -43,11 +43,15 @@ export async function expireStale(db: AppDatabase, ctx: TenantContext): Promise<
  * run only when an unconsumed APPROVED request matches its exact args; otherwise
  * a PENDING request is created (or reused) and the call is blocked.
  */
+/** Fired when a NEW oversight request is created (wire to a webhook/notifier). */
+export type OversightNotifier = (info: { requestId: string; toolName: string; riskLevel: RiskLevel }) => Promise<void> | void;
+
 export class DbOversightGate implements OversightGate {
   constructor(
     private readonly db: AppDatabase,
     private readonly ctx: TenantContext,
     private readonly masterKey: Buffer,
+    private readonly notify?: OversightNotifier,
   ) {}
 
   async check(toolName: string, args: unknown, riskLevel: RiskLevel): Promise<OversightCheckResult> {
@@ -98,6 +102,8 @@ export class DbOversightGate implements OversightGate {
           expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
         })
         .returning({ id: oversightRequests.id });
+      // Notify responders that a new human-oversight decision is required.
+      if (this.notify) await this.notify({ requestId: created!.id, toolName, riskLevel });
       return { approved: false, requestId: created!.id };
     });
   }

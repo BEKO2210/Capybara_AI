@@ -36,6 +36,20 @@ describe('key source — env vs file (KMS/secret-manager pattern)', () => {
     expect(km).toEqual({ encryptionKey: 'AAAA', documentEncryptionKey: 'BBBB', masterKek: 'CCCC' });
   });
 
+  it('reads keys from a command when KEY_SOURCE=command (native KMS path)', () => {
+    const km = resolveKeyMaterial({
+      KEY_SOURCE: 'command',
+      MASTER_KEK_COMMAND: 'printf deadbeef',
+      ENCRYPTION_KEY_COMMAND: 'echo cafe',
+    });
+    expect(km.masterKek).toBe('deadbeef');
+    expect(km.encryptionKey).toBe('cafe');
+  });
+
+  it('fails closed when a key command exits non-zero', () => {
+    expect(() => resolveKeyMaterial({ KEY_SOURCE: 'command', MASTER_KEK_COMMAND: 'exit 3' })).toThrow();
+  });
+
   it('loadConfig starts in production with keys sourced from files', () => {
     const dir = mkdtempSync(join(tmpdir(), 'capy-keys-'));
     const enc = join(dir, 'enc'), doc = join(dir, 'doc'), kek = join(dir, 'kek');

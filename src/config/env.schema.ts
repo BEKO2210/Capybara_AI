@@ -73,10 +73,15 @@ export const envSchema = z.object({
   // 'file' reads them from the *_FILE paths below — the recommended pattern for
   // secrets projected by a KMS/secret-manager sidecar (Vault Agent, CSI driver,
   // Docker/K8s secrets). Fail-closed: a set *_FILE that cannot be read aborts.
-  KEY_SOURCE: z.enum(['env', 'file']).default('env'),
+  KEY_SOURCE: z.enum(['env', 'file', 'command']).default('env'),
   ENCRYPTION_KEY_FILE: z.string().optional(),
   DOCUMENT_ENCRYPTION_KEY_FILE: z.string().optional(),
   MASTER_KEK_FILE: z.string().optional(),
+  // KEY_SOURCE=command: run these to fetch each key (e.g. `vault kv get …`,
+  // `aws kms decrypt …`). Stdout (trimmed) is the key. Non-zero exit fails closed.
+  ENCRYPTION_KEY_COMMAND: z.string().optional(),
+  DOCUMENT_ENCRYPTION_KEY_COMMAND: z.string().optional(),
+  MASTER_KEK_COMMAND: z.string().optional(),
 
   // Off-box audit anchoring (Ed25519). When a private key is configured,
   // `npm run audit:anchor` signs chain checkpoints; the public key verifies them
@@ -90,6 +95,13 @@ export const envSchema = z.object({
   OIDC_CLIENT_ID: z.string().optional(),
   OIDC_CLIENT_SECRET: z.string().optional(),
   OIDC_REDIRECT_URI: z.string().url().optional(),
+
+  // SAML 2.0 SP (all-or-nothing). SP-initiated POST binding; assertions must be
+  // signed and are verified against SAML_IDP_CERT. No XML hand-rolling.
+  SAML_ENTRY_POINT: z.string().url().optional(),
+  SAML_ISSUER: z.string().optional(),
+  SAML_CALLBACK_URL: z.string().url().optional(),
+  SAML_IDP_CERT: z.string().optional(),
 
   // Document intelligence (RAG). Separate key from ENCRYPTION_KEY; per-tenant
   // subkeys are derived from it via HKDF.

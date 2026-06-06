@@ -86,8 +86,25 @@ describe('admin UI', () => {
     expect(body).toContain('class="sidebar"'); // sidebar nav
   });
 
+  it('renders the human-oversight approval queue and protects decisions with CSRF', async () => {
+    const { oversightRequests } = await import('../../src/db/schema/index.js');
+    const [req] = await t.admin.db.insert(oversightRequests).values({
+      orgId: owner.orgId, requestedBy: owner.userId, toolName: 'delete_database',
+      toolArgsHash: 'h', toolArgsEncrypted: 'x', riskLevel: 'CRITICAL', status: 'PENDING',
+      expiresAt: new Date(Date.now() + 3_600_000),
+    }).returning({ id: oversightRequests.id });
+
+    const page = await (await fetch(`${url}/admin/oversight`, { headers: auth(owner, 'admin') })).text();
+    expect(page).toContain('delete_database');
+    expect(page).toContain('/admin/oversight/' + req!.id + '/approve');
+
+    // A decision without a CSRF token is rejected (protection wired).
+    const res = await fetch(`${url}/admin/oversight/${req!.id}/approve`, { method: 'POST', headers: auth(owner, 'admin') });
+    expect(res.status).toBe(403);
+  });
+
   it('emits NO inline style attributes (keeps the strict CSP intact)', async () => {
-    const pages = ['/admin/dashboard', '/admin/users', '/admin/compliance', '/admin/sso', '/admin/api-keys', '/admin/webhooks', '/admin/documents'];
+    const pages = ['/admin/dashboard', '/admin/users', '/admin/compliance', '/admin/oversight', '/admin/sso', '/admin/api-keys', '/admin/webhooks', '/admin/documents'];
     for (const p of pages) {
       const body = await (await fetch(`${url}${p}`, { headers: auth(owner, 'admin') })).text();
       expect(body, `${p} has inline style=`).not.toMatch(/\sstyle=/);
