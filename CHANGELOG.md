@@ -4,6 +4,23 @@ All notable changes to Capybara_AI are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added — post-1.0 review hardening
+- **Off-box audit anchoring** (Ed25519): signed checkpoints commit to the
+  security-event chain head so a DB-superuser rewrite is detectable with a public
+  key held off the database. New `npm run audit:anchor`; `npm run verify:chain`
+  now also verifies anchors. Append-only `audit_anchors` table + optional
+  `anchors.jsonl` off-box sink.
+- **KMS / secret-manager key source** (`KEY_SOURCE=file`): at-rest keys can be
+  projected from files mounted by a Vault/CSI/Docker-secret sidecar; fail-closed
+  on unreadable files.
+- **Shared rate-limit store seam** (`buildServer({ rateLimitRedis })`) for one
+  global rate-limit budget across horizontally scaled replicas.
+- **Internationalization**: full English README (`README.en.md`) with a language
+  switcher.
+- New guide: `docs/security/AUDIT_ANCHORING_AND_KMS.md`.
+
 ## [1.0.0] — 2026-06-05
 
 First public release. A complete, security-first, self-hostable AI workspace

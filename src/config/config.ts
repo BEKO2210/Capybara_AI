@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { envSchema, type RawEnv } from './env.schema.js';
 import { assessSecret } from './secrets.js';
+import { resolveKeyMaterial } from './keySource.js';
 import { llmProvidersSchema, type LlmProviderConfig } from '../ai/providers/registry.js';
 
 /**
@@ -148,6 +149,14 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
 
   const issues: ConfigIssue[] = [];
 
+  // Resolve at-rest key material from the configured source (env or file/KMS).
+  let keyMaterial = { encryptionKey: undefined, documentEncryptionKey: undefined, masterKek: undefined } as ReturnType<typeof resolveKeyMaterial>;
+  try {
+    keyMaterial = resolveKeyMaterial(env);
+  } catch (err) {
+    issues.push({ variable: 'KEY_SOURCE', reason: `failed to read key file (${err instanceof Error ? err.message : 'unreadable'})` });
+  }
+
   // 2. Production fail-closed presence checks.
   if (isProduction) {
     for (const key of REQUIRED_IN_PRODUCTION) {
@@ -226,12 +235,12 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   }
 
   // 8. Encryption key (AES-256-GCM). Required+valid in prod; ephemeral in dev.
-  let encryptionKey = parseEncryptionKey(e.ENCRYPTION_KEY);
+  let encryptionKey = parseEncryptionKey(keyMaterial.encryptionKey);
   if (isProduction) {
     if (!encryptionKey) {
       issues.push({
         variable: 'ENCRYPTION_KEY',
-        reason: e.ENCRYPTION_KEY ? 'must be 32 bytes (base64 or hex)' : 'required in production but missing',
+        reason: keyMaterial.encryptionKey ? 'must be 32 bytes (base64 or hex)' : 'required in production but missing',
       });
     }
   } else if (!encryptionKey) {
@@ -239,10 +248,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   }
 
   // 8b. Master KEK (envelope encryption / key rotation).
-  let masterKek = parseEncryptionKey(e.MASTER_KEK);
+  let masterKek = parseEncryptionKey(keyMaterial.masterKek);
   if (isProduction) {
     if (!masterKek) {
-      issues.push({ variable: 'MASTER_KEK', reason: e.MASTER_KEK ? 'must be 32 bytes (hex or base64)' : 'required in production but missing' });
+      issues.push({ variable: 'MASTER_KEK', reason: keyMaterial.masterKek ? 'must be 32 bytes (hex or base64)' : 'required in production but missing' });
     }
   } else if (!masterKek) {
     masterKek = randomBytes(32); // ephemeral dev key
@@ -267,12 +276,12 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   }
 
   // 10. Document encryption key + embedding provider requirements.
-  let documentEncryptionKey = parseEncryptionKey(e.DOCUMENT_ENCRYPTION_KEY);
+  let documentEncryptionKey = parseEncryptionKey(keyMaterial.documentEncryptionKey);
   if (isProduction) {
     if (!documentEncryptionKey) {
       issues.push({
         variable: 'DOCUMENT_ENCRYPTION_KEY',
-        reason: e.DOCUMENT_ENCRYPTION_KEY ? 'must be 32 bytes (hex or base64)' : 'required in production but missing',
+        reason: keyMaterial.documentEncryptionKey ? 'must be 32 bytes (hex or base64)' : 'required in production but missing',
       });
     }
     if (e.EMBEDDING_PROVIDER === 'local' && !e.OLLAMA_BASE_URL) {

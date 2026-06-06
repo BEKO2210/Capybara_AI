@@ -10,10 +10,12 @@ der Hand zu geben.
 
 [![CI](https://github.com/BEKO2210/Capybara_AI/actions/workflows/ci.yml/badge.svg)](https://github.com/BEKO2210/Capybara_AI/actions/workflows/ci.yml)
 [![Security](https://github.com/BEKO2210/Capybara_AI/actions/workflows/security.yml/badge.svg)](https://github.com/BEKO2210/Capybara_AI/actions/workflows/security.yml)
-[![Tests](https://img.shields.io/badge/tests-187%20passing-3fb950)](.github/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-197%20passing-3fb950)](.github/workflows/ci.yml)
 [![Version](https://img.shields.io/badge/version-1.0.0-4f9cf9)](CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
 ![Made in Germany](https://img.shields.io/badge/Made%20in-Germany%20🇩🇪-black)
+
+**🇩🇪 Deutsch** · [🇬🇧 English](README.en.md)
 
 </div>
 
@@ -44,7 +46,7 @@ schwachen Secrets.
 | 🤖 **LLM-Provider-Abstraktion** | Lokal zuerst (Ollama/vLLM, OpenAI-kompatibel) + Cloud (OpenAI, Anthropic). Endpunkte sind **server-only** — schließt die `base_url`-SSRF-Klasse. |
 | 📜 **EU AI Act & DSGVO** | Transparenz-Envelope auf jeder KI-Antwort, KI-Inventar, menschliche Aufsicht (Human Oversight), atomare GDPR-Löschung, Datenexport. |
 | 🔏 **Field-Level Encryption** | AES-256-GCM at rest, Envelope-Verschlüsselung (KEK→DEK) mit **Key-Rotation**, die Chunks & Nachrichten unter neuem Schlüssel re-verschlüsselt. |
-| 🧾 **Tamper-Evident Audit** | Hash-verkettete `security_events` (append-only), offline verifizierbar (`npm run verify:chain`). |
+| 🧾 **Tamper-Evident Audit** | Hash-verkettete `security_events` (append-only), **Off-Box-Anchoring (Ed25519)**, offline verifizierbar (`npm run verify:chain`). |
 | 🚦 **Layered Rate Limiting** | Pro IP/Konto/LLM/Upload, Speicherquota pro Org, Brute-Force-Lockout mit exponentiellem Backoff + Admin-Unlock. |
 | 🐳 **Gehärtetes Docker** | Non-root, `cap_drop ALL`, `no-new-privileges`, read-only FS, Postgres nicht veröffentlicht, fail-closed bei fehlenden Secrets. |
 | ♻️ **Backup & DR** | `backup.sh` / `restore.sh`, Retention, optionale GPG-Verschlüsselung, Disaster-Recovery-Runbook, tiefer `/healthz`-Check. |
@@ -158,6 +160,8 @@ verifiziert, nicht gemockt.
 - **DSGVO/GDPR**: Datenkarte, Retention, atomare Löschung, Export — siehe
   `PRIVACY_AND_GDPR.md`.
 - **EU AI Act**: Transparenz auf jeder KI-Antwort, KI-Inventar, Human Oversight.
+- **Audit-Integrität**: Off-Box-Ed25519-Anchoring + KMS/Secret-Manager-Schlüsselquelle
+  — siehe [`docs/security/AUDIT_ANCHORING_AND_KMS.md`](docs/security/AUDIT_ANCHORING_AND_KMS.md).
 - **Supply Chain**: `npm audit`, OSV-Scan, gitleaks, CycloneDX-SBOM in CI.
 
 Sicherheitslücke gefunden? Bitte **nicht** öffentlich melden — siehe

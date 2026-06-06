@@ -34,3 +34,5 @@ export type {
 } from './enterprise.js';
 export { scimConfigs, encryptionKeyVersions, authLockouts } from './p2.js';
 export type { ScimConfig, EncryptionKeyVersion, AuthLockout } from './p2.js';
+export { auditAnchors } from './auditAnchors.js';
+export type { AuditAnchor, NewAuditAnchor } from './auditAnchors.js';
