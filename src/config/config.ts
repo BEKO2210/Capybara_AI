@@ -57,6 +57,15 @@ export interface Config {
         readonly redirectUri: string;
       }
     | undefined;
+  /** SAML 2.0 SP settings, present only when all four SAML_* vars are configured. */
+  readonly saml:
+    | {
+        readonly entryPoint: string;
+        readonly issuer: string;
+        readonly callbackUrl: string;
+        readonly idpCert: string;
+      }
+    | undefined;
   /** Master key for document/chunk encryption (per-tenant subkeys derived via HKDF). */
   readonly documentEncryptionKey: Buffer;
   readonly embeddings: {
@@ -275,6 +284,24 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     };
   }
 
+  // 9b. SAML — all-or-nothing.
+  const samlParts = [e.SAML_ENTRY_POINT, e.SAML_ISSUER, e.SAML_CALLBACK_URL, e.SAML_IDP_CERT];
+  const samlCount = samlParts.filter((v) => v && v.length > 0).length;
+  let saml: Config['saml'];
+  if (samlCount > 0 && samlCount < 4) {
+    issues.push({
+      variable: 'SAML_*',
+      reason: 'SAML_ENTRY_POINT, SAML_ISSUER, SAML_CALLBACK_URL and SAML_IDP_CERT must all be set together',
+    });
+  } else if (samlCount === 4) {
+    saml = {
+      entryPoint: e.SAML_ENTRY_POINT as string,
+      issuer: e.SAML_ISSUER as string,
+      callbackUrl: e.SAML_CALLBACK_URL as string,
+      idpCert: e.SAML_IDP_CERT as string,
+    };
+  }
+
   // 10. Document encryption key + embedding provider requirements.
   let documentEncryptionKey = parseEncryptionKey(keyMaterial.documentEncryptionKey);
   if (isProduction) {
@@ -334,6 +361,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     encryptionKey: encryptionKey as Buffer,
     masterKek: masterKek as Buffer,
     oidc,
+    saml,
     documentEncryptionKey: documentEncryptionKey as Buffer,
     embeddings: {
       provider: e.EMBEDDING_PROVIDER,

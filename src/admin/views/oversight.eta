@@ -1,0 +1,47 @@
+<%~ include("_head", { title: "Aufsicht", active: "oversight" }) %>
+<%
+  var riskPill = function (r) {
+    var v = String(r || '').toUpperCase();
+    var cls = v === 'CRITICAL' ? 'err' : v === 'HIGH' ? 'warn' : 'ok';
+    return '<span class="pill ' + cls + '">' + v + '</span>';
+  };
+%>
+<div class="card">
+  <div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg> Offene Freigaben — EU AI Act Art. 14</div>
+  <% if (it.requests.length) { %>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Werkzeug</th><th>Risiko</th><th>Angefragt</th><th>Läuft ab</th><th>Entscheidung</th></tr></thead>
+        <tbody>
+        <% it.requests.forEach(function (r) { %>
+          <tr id="ov-<%= r.id %>">
+            <td><strong><%= r.toolName %></strong></td>
+            <td><%~ riskPill(r.riskLevel) %></td>
+            <td class="muted"><%= new Date(r.createdAt).toLocaleString('de-DE') %></td>
+            <td class="muted"><%= new Date(r.expiresAt).toLocaleString('de-DE') %></td>
+            <td>
+              <button class="btn sm" hx-post="/admin/oversight/<%= r.id %>/approve" hx-target="#ov-<%= r.id %>" hx-swap="outerHTML"
+                      hx-headers='{"x-csrf-token": "<%= it.csrf %>"}'
+                      data-toast-success="Freigabe erteilt." data-toast-error="Aktion fehlgeschlagen.">
+                <span class="htmx-indicator spinner"></span> Freigeben
+              </button>
+              <button class="btn sm danger" hx-post="/admin/oversight/<%= r.id %>/reject" hx-target="#ov-<%= r.id %>" hx-swap="outerHTML"
+                      hx-headers='{"x-csrf-token": "<%= it.csrf %>"}'
+                      data-toast-success="Antrag abgelehnt." data-toast-error="Aktion fehlgeschlagen.">
+                Ablehnen
+              </button>
+            </td>
+          </tr>
+        <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } else { %>
+    <div class="empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>
+      <h3>Keine offenen Freigaben</h3>
+      <p>Hochriskante KI-Werkzeuge (Art. 14) erscheinen hier zur menschlichen Freigabe, bevor sie ausgeführt werden.</p>
+    </div>
+  <% } %>
+</div>
+<%~ include("_foot") %>

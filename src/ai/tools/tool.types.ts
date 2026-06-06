@@ -80,5 +80,23 @@ export interface ToolDefinition<TArgs = unknown> {
   scopes: ToolScopes;
   /** Hard wall-clock cap for a single invocation. */
   timeoutMs: number;
+  /**
+   * When true, the tool MUST run inside an external isolation boundary
+   * (container / microVM / gVisor) — never in-process. The sandbox FAILS CLOSED:
+   * such a tool is denied unless an `IsolationRunner` is provided. Use this for
+   * any tool that executes untrusted/third-party code; in-process capability
+   * scopes are not a substitute for kernel isolation.
+   */
+  requiresIsolation?: boolean;
   handler: (args: TArgs, ctx: ToolContext) => Promise<ToolResult>;
+}
+
+/**
+ * Pluggable execution boundary for isolation-required tools. Operators provide
+ * an implementation backed by a container-per-invocation / microVM / gVisor
+ * runner. The sandbox routes `requiresIsolation` tools here instead of calling
+ * the in-process handler.
+ */
+export interface IsolationRunner {
+  run(def: ToolDefinition, args: unknown, opts: { timeoutMs: number }): Promise<ToolResult>;
 }

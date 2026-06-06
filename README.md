@@ -10,7 +10,7 @@ der Hand zu geben.
 
 [![CI](https://github.com/BEKO2210/Capybara_AI/actions/workflows/ci.yml/badge.svg)](https://github.com/BEKO2210/Capybara_AI/actions/workflows/ci.yml)
 [![Security](https://github.com/BEKO2210/Capybara_AI/actions/workflows/security.yml/badge.svg)](https://github.com/BEKO2210/Capybara_AI/actions/workflows/security.yml)
-[![Tests](https://img.shields.io/badge/tests-197%20passing-3fb950)](.github/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-213%20passing-3fb950)](.github/workflows/ci.yml)
 [![Version](https://img.shields.io/badge/version-1.0.0-4f9cf9)](CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
 ![Made in Germany](https://img.shields.io/badge/Made%20in-Germany%20🇩🇪-black)
@@ -40,7 +40,7 @@ schwachen Secrets.
 | --- | --- |
 | 🔐 **Zero-Trust-Mandanten** | PostgreSQL Row-Level-Security unter einer restriktiven Rolle (NOBYPASSRLS). Cross-Tenant-Zugriff ist auf DB-Ebene unmöglich — auch bei vergessenem `WHERE`. |
 | 🛡️ **Fail-closed Konfiguration** | Produktion verweigert den Start bei fehlenden/schwachen Secrets, Wildcard-CORS, unsicheren Cookies oder DB-URL ohne TLS. |
-| 👤 **Auth & SSO** | Argon2id, opaque Server-Sessions (nur SHA-256-Hash gespeichert), TOTP-MFA, OIDC-SSO, **SCIM 2.0** User-Provisioning. |
+| 👤 **Auth & SSO** | Argon2id, opaque Server-Sessions (nur SHA-256-Hash gespeichert), TOTP-MFA, **OIDC- & SAML-2.0-SSO**, **SCIM 2.0** User-Provisioning. |
 | 🧩 **RBAC** | `owner / admin / member / viewer` mit Least-Privilege-Guards (401/403, deny-by-default). |
 | 📚 **Dokumenten-Intelligenz (RAG)** | pgvector-Suche, Ingestion-Pipeline, klassifizierungsbasierte ACL, optionaler ClamAV-Scan, Lifecycle & Legal Hold. |
 | 🤖 **LLM-Provider-Abstraktion** | Lokal zuerst (Ollama/vLLM, OpenAI-kompatibel) + Cloud (OpenAI, Anthropic). Endpunkte sind **server-only** — schließt die `base_url`-SSRF-Klasse. |

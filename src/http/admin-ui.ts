@@ -10,6 +10,7 @@ import { requireRole } from '../rbac/guard.js';
 import { listUsers, userActivity, inviteUser } from '../admin/users.js';
 import { orgStats } from '../admin/stats.js';
 import { listInventory } from '../compliance/inventory.js';
+import { listOversight, approveRequest, rejectRequest } from '../compliance/oversight.js';
 
 export interface AdminUiDeps {
   db: AppDatabase;
@@ -79,6 +80,25 @@ export async function registerAdminUi(app: FastifyInstance, deps: AdminUiDeps): 
     const inventory = await listInventory(deps.db, ctxOf(req));
     return html(reply, 'compliance', { title: 'Compliance', active: 'compliance', inventory });
   });
+
+  // ── Human-oversight approvals (EU AI Act Art. 14) ──
+  app.get('/admin/oversight', adminOnly, async (req, reply) => {
+    const requests = await listOversight(deps.db, ctxOf(req), { pendingOnly: true });
+    return html(reply, 'oversight', { title: 'Aufsicht', active: 'oversight', requests, csrf: reply.generateCsrf() });
+  });
+
+  const decide = (action: 'approve' | 'reject') =>
+    async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      const ctx = ctxOf(req);
+      const fn = action === 'approve' ? approveRequest : rejectRequest;
+      const ok = await fn(deps.db, ctx, req.params.id, ctx.userId);
+      if (!ok) return reply.code(409).type('text/html').send('<tr><td colspan="5">Bereits entschieden.</td></tr>');
+      // Row removed from the pending list on success (htmx outerHTML swap).
+      return reply.type('text/html').send('');
+    };
+
+  app.post<{ Params: { id: string } }>('/admin/oversight/:id/approve', { preHandler: [requireRole('admin'), app.csrfProtection] }, decide('approve'));
+  app.post<{ Params: { id: string } }>('/admin/oversight/:id/reject', { preHandler: [requireRole('admin'), app.csrfProtection] }, decide('reject'));
 
   app.get('/admin/sso', adminOnly, (_req, reply) => {
     const csrf = reply.generateCsrf();

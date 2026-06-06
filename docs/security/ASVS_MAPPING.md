@@ -90,8 +90,24 @@ implementing module and, where applicable, the test.
 - **V11 Anti-automation at scale:** shared rate-limit store seam
   (`buildServer({ rateLimitRedis })`) for one global budget across replicas.
 
+## Delivered in P3
+
+- **V2 Authentication:** **SAML 2.0** SP (SP-initiated POST binding) with signed
+  assertions verified via `@node-saml/node-saml`; signature/audience/expiry
+  enforced, fail-closed (`src/auth/saml.provider.ts`, `tests/auth/saml.test.ts`).
+- **V6 Key management:** native KMS key source `KEY_SOURCE=command` (Vault / AWS
+  KMS CLI), fail-closed on non-zero exit (`src/config/keySource.ts`).
+- **V10/V1 Malicious code isolation:** tools marked `requiresIsolation` are
+  denied unless an external `IsolationRunner` is wired — untrusted code never
+  runs in-process (`src/ai/tools/sandbox.ts`).
+- **V7 / DER.1 Attack detection:** anomaly detection over the audit stream raises
+  tamper-evident `security.anomaly` events with notifications
+  (`src/security/anomaly.ts`).
+- **V14 Governance:** BSI IT-Grundschutz readiness mapping
+  (`docs/security/BSI_GRUNDSCHUTZ_MAPPING.md`).
+
 ## Notable not-yet (tracked in ENTERPRISE_READINESS / RISK_REGISTER)
 
-- Full **SAML** (typed stub only) — P3.
-- Native in-process **KMS decrypt client** (file/env key source available today) — P3.
-- Process/microVM isolation for tool execution — P3.
+- Bundled **microVM/gVisor tool runner** (fail-closed isolation seam is in place) — P4.
+- Native in-process **KMS decrypt client** (env/file/command sources available) — P4.
+- SAML **`InResponseTo` replay cache** (signature/audience/expiry enforced today) — P4.

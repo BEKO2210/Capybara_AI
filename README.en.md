@@ -10,7 +10,7 @@ party.
 
 [![CI](https://github.com/BEKO2210/Capybara_AI/actions/workflows/ci.yml/badge.svg)](https://github.com/BEKO2210/Capybara_AI/actions/workflows/ci.yml)
 [![Security](https://github.com/BEKO2210/Capybara_AI/actions/workflows/security.yml/badge.svg)](https://github.com/BEKO2210/Capybara_AI/actions/workflows/security.yml)
-[![Tests](https://img.shields.io/badge/tests-197%20passing-3fb950)](.github/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-213%20passing-3fb950)](.github/workflows/ci.yml)
 [![Version](https://img.shields.io/badge/version-1.0.0-4f9cf9)](CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
 ![Made in Germany](https://img.shields.io/badge/Made%20in-Germany%20🇩🇪-black)
@@ -39,7 +39,7 @@ refuses to start with weak secrets.
 | --- | --- |
 | 🔐 **Zero-trust tenancy** | PostgreSQL Row-Level Security under a restricted role (NOBYPASSRLS). Cross-tenant access is impossible at the DB layer — even with a forgotten `WHERE`. |
 | 🛡️ **Fail-closed config** | Production refuses to start on missing/weak secrets, wildcard CORS, insecure cookies, or a non-TLS database URL. |
-| 👤 **Auth & SSO** | Argon2id, opaque server sessions (only the SHA-256 hash stored), TOTP MFA, OIDC SSO, **SCIM 2.0** provisioning. |
+| 👤 **Auth & SSO** | Argon2id, opaque server sessions (only the SHA-256 hash stored), TOTP MFA, **OIDC & SAML 2.0 SSO**, **SCIM 2.0** provisioning. |
 | 🧩 **RBAC** | `owner / admin / member / viewer` with least-privilege guards (401/403, deny-by-default). |
 | 📚 **Document intelligence (RAG)** | pgvector search, ingestion pipeline, classification-based ACL, optional ClamAV scan, lifecycle & legal hold. |
 | 🤖 **LLM provider abstraction** | Local-first (Ollama/vLLM, OpenAI-compatible) + cloud (OpenAI, Anthropic). Endpoints are **server-only** — closing the `base_url` SSRF class. |
