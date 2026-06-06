@@ -78,9 +78,20 @@ implementing module and, where applicable, the test.
   and a deep `/healthz` (db/vectorSearch/backup/version → 200/503)
   (`scripts/`, `docs/DISASTER_RECOVERY.md`, `src/http/health.ts`).
 
+## Delivered post-1.0 (review hardening)
+
+- **V7 Logging integrity:** off-box **Ed25519 audit anchoring** — signed
+  checkpoints over the chain head make a DB-superuser rewrite detectable with a
+  public key held off the database (`src/audit/anchor.ts`,
+  `tests/audit/anchor.test.ts`; `npm run audit:anchor` / `verify:chain`).
+- **V6 Key management:** pluggable **key source** — at-rest keys can be projected
+  from a KMS / secret-manager sidecar as files (`KEY_SOURCE=file`), fail-closed
+  on unreadable files (`src/config/keySource.ts`, `tests/config/keySource.test.ts`).
+- **V11 Anti-automation at scale:** shared rate-limit store seam
+  (`buildServer({ rateLimitRedis })`) for one global budget across replicas.
+
 ## Notable not-yet (tracked in ENTERPRISE_READINESS / RISK_REGISTER)
 
 - Full **SAML** (typed stub only) — P3.
-- KMS-backed master key (KEK is env-supplied today) — P3.
+- Native in-process **KMS decrypt client** (file/env key source available today) — P3.
 - Process/microVM isolation for tool execution — P3.
-- Security-event off-box anchoring / log shipping — P3.

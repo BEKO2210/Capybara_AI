@@ -18,7 +18,17 @@ import type { Config } from '../config/index.js';
  * These plugins use fastify-plugin internally, so their decorators
  * (e.g. app.csrfProtection) propagate to routes registered on `app`.
  */
-export async function registerSecurity(app: FastifyInstance, config: Config): Promise<void> {
+export interface SecurityOptions {
+  /**
+   * Optional shared store for rate limiting (an ioredis-compatible client).
+   * In-memory limits are per-instance; inject a shared store so a horizontally
+   * scaled deployment enforces ONE global budget. We don't bundle a Redis client
+   * — operators pass their own, keeping the dependency surface minimal.
+   */
+  rateLimitRedis?: unknown;
+}
+
+export async function registerSecurity(app: FastifyInstance, config: Config, opts: SecurityOptions = {}): Promise<void> {
   await app.register(cookie, { secret: config.cookieSecret });
 
   await app.register(helmet, {
@@ -52,6 +62,8 @@ export async function registerSecurity(app: FastifyInstance, config: Config): Pr
   await app.register(rateLimit, {
     max: config.rateLimit.max,
     timeWindow: config.rateLimit.windowMs,
+    // Shared store for multi-instance deployments (per-instance in-memory if absent).
+    ...(opts.rateLimitRedis ? { redis: opts.rateLimitRedis } : {}),
     // Per-API-key buckets when an API key is presented; per-IP otherwise.
     keyGenerator: (req: FastifyRequest) => {
       const authz = req.headers['authorization'];

@@ -17,6 +17,8 @@ export interface BuildServerOptions {
   routes?: (app: FastifyInstance) => Promise<void> | void;
   /** Optional health dependencies enabling deep `/healthz` component checks. */
   health?: HealthDeps;
+  /** Optional shared rate-limit store (ioredis-compatible) for horizontal scaling. */
+  rateLimitRedis?: unknown;
 }
 
 /**
@@ -46,7 +48,7 @@ export async function buildServer(opts: BuildServerOptions): Promise<FastifyInst
   });
 
   registerErrorHandler(app, config.isProduction);
-  await registerSecurity(app, config);
+  await registerSecurity(app, config, opts.rateLimitRedis ? { rateLimitRedis: opts.rateLimitRedis } : {});
   registerHealthRoutes(app, opts.health ?? {});
 
   // OpenAPI docs are OFF by default; opt in via ENABLE_API_DOCS=true.

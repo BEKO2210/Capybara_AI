@@ -69,6 +69,22 @@ export const envSchema = z.object({
   // 32-byte hex. Required in production; ephemeral in dev if unset.
   MASTER_KEK: z.string().optional(),
 
+  // Key-material source. 'env' (default) reads keys from the variables above;
+  // 'file' reads them from the *_FILE paths below — the recommended pattern for
+  // secrets projected by a KMS/secret-manager sidecar (Vault Agent, CSI driver,
+  // Docker/K8s secrets). Fail-closed: a set *_FILE that cannot be read aborts.
+  KEY_SOURCE: z.enum(['env', 'file']).default('env'),
+  ENCRYPTION_KEY_FILE: z.string().optional(),
+  DOCUMENT_ENCRYPTION_KEY_FILE: z.string().optional(),
+  MASTER_KEK_FILE: z.string().optional(),
+
+  // Off-box audit anchoring (Ed25519). When a private key is configured,
+  // `npm run audit:anchor` signs chain checkpoints; the public key verifies them
+  // (`npm run verify:chain`). PEM format. Optional — anchoring is opt-in.
+  AUDIT_ANCHOR_PRIVATE_KEY: z.string().optional(),
+  AUDIT_ANCHOR_PUBLIC_KEY: z.string().optional(),
+  AUDIT_ANCHOR_DIR: z.string().optional(),
+
   // OIDC (all-or-nothing). PKCE authorization-code flow; no implicit grant.
   OIDC_ISSUER: z.string().url().optional(),
   OIDC_CLIENT_ID: z.string().optional(),

@@ -50,9 +50,10 @@ tested today**, and what is deferred to P1/P2. No capability is claimed as
 | Backup/restore + disaster recovery runbook | ✅ Implemented | `scripts/backup.sh`, `scripts/restore.sh`, `docs/DISASTER_RECOVERY.md` |
 | Deep health check (db/vector/backup/version) | ✅ Implemented + tested | `src/http/health.ts`, `tests/http/health.test.ts` |
 | Per-token fine-grained scopes / API keys | ✅ Implemented + tested | `src/integrations/apiKeys.ts`, `src/http/apiKeyAuth.ts` |
-| Security-event off-box anchoring | ❌ P3 | chain is local today; verify via `npm run verify:chain` |
+| Security-event off-box anchoring (Ed25519) | ✅ Implemented + tested | `src/audit/anchor.ts`, `tests/audit/anchor.test.ts`; `npm run audit:anchor` / `verify:chain` |
+| KMS / secret-manager key source | ✅ Implemented + tested | `src/config/keySource.ts` (`KEY_SOURCE=file`), `tests/config/keySource.test.ts`; native KMS client is P3 |
+| Shared rate-limit store (horizontal scale) | ✅ Seam implemented | `buildServer({ rateLimitRedis })` → `@fastify/rate-limit` |
 | Process/microVM isolation for tools | ❌ P3 | capability-scoped in-process today |
-| KMS-backed master key | 🟡 Env-supplied KEK | `MASTER_KEK`; external KMS integration is future work |
 
 ## What "done" means here
 
@@ -65,15 +66,19 @@ mock data on production code paths — demo/fixtures live only under `tests/`.
 1. **In-process tool sandbox.** Tools are trusted code constrained by capability
    scopes; this is not a substitute for kernel isolation. Do not register tools
    that execute untrusted code until microVM/worker isolation lands (P3).
-2. **Audit chain is local.** A DB superuser could rewrite and recompute it.
-   Until off-box anchoring (P3), restrict superuser access, ship logs to an
-   append-only sink, and run `npm run verify:chain` regularly (and post-restore).
-3. **Master key is env-supplied.** Field-level encryption uses an envelope
-   scheme (`MASTER_KEK` wraps per-org DEKs) with rotation, but the KEK comes from
-   the environment. Source it from a secret manager; native KMS is future work.
-4. **DoS protections are per-instance.** Layered rate limiting, per-org storage
-   quota, and brute-force lockout are in-process; for internet-facing
-   deployments add a WAF/edge rate limiting and sticky routing for stream caps.
+2. **Audit anchoring requires off-box key custody.** Signed Ed25519 checkpoints
+   (`npm run audit:anchor`) make a DB-superuser rewrite detectable via the public
+   key — but only if the private key and the public verifier live off the DB host
+   and the `anchors.jsonl` sink is synced to a write-once medium. Run
+   `npm run verify:chain` (with `AUDIT_ANCHOR_PUBLIC_KEY`) regularly.
+3. **Master key custody.** Field-level encryption uses an envelope scheme
+   (`MASTER_KEK` wraps per-org DEKs) with rotation. Keys can be sourced from the
+   environment **or** from files (`KEY_SOURCE=file`) projected by a KMS / secret
+   manager sidecar. A native in-process KMS decrypt client is still P3.
+4. **DoS protections.** Layered rate limiting, per-org storage quota, and
+   brute-force lockout are enforced in-process; inject a shared store
+   (`rateLimitRedis`) for a global budget across replicas, and add a WAF/edge
+   rate limiting + sticky routing for stream caps on internet-facing deployments.
 5. **SAML is a stub.** OIDC SSO is delivered; full SAML is deferred (P3). Front
    with an SSO-capable reverse proxy if SAML is mandatory today.
 
@@ -91,9 +96,11 @@ mock data on production code paths — demo/fixtures live only under `tests/`.
 - **Phase D / P2 (delivered):** SCIM 2.0 provisioning; field-level encryption +
   envelope key rotation; layered rate limiting, storage quota & brute-force
   lockout; backup/restore + disaster-recovery runbook; deep `/healthz`.
-- **P3 (next):** full SAML; microVM/worker isolation for dangerous tools;
-  security-event off-box anchoring/log shipping; KMS-backed master key;
-  BSI-C5 readiness; approval UI + notifications; anomaly detection.
+- **Post-1.0 hardening (delivered):** off-box Ed25519 audit anchoring; KMS /
+  secret-manager key source (`KEY_SOURCE=file`); shared rate-limit store seam.
+- **P3 (next):** full SAML; microVM/worker isolation for dangerous tools; native
+  in-process KMS decrypt client; BSI-C5 readiness; approval UI + notifications;
+  anomaly detection.
 
 ## Compliance posture
 

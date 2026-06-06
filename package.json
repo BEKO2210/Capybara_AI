@@ -9,12 +9,13 @@
     "node": ">=22 <23"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json && cp -r src/db/sql dist/db/sql && mkdir -p dist/admin && cp -r src/admin/views dist/admin/views && cp -r src/admin/static dist/admin/static",
+    "build": "tsc -p tsconfig.build.json && rm -rf dist/db/sql dist/admin/views dist/admin/static && mkdir -p dist/db dist/admin && cp -r src/db/sql dist/db/sql && cp -r src/admin/views dist/admin/views && cp -r src/admin/static dist/admin/static",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "db:migrate": "tsx src/db/migrate-cli.ts",
-    "verify:chain": "tsx src/audit/verifyChain-cli.ts"
+    "verify:chain": "tsx src/audit/verifyChain-cli.ts",
+    "audit:anchor": "tsx src/audit/anchor-cli.ts"
   },
   "dependencies": {
     "@fastify/cookie": "11.0.2",
